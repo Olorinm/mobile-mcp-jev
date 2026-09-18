@@ -8,6 +8,12 @@ An experimental [Mobile MCP](https://github.com/mobile-next/mobile-mcp) fork tha
 
 > **Small local benchmark: 1.8–2.5× the baseline speed and 84–87% lower API cost on two simple Android settings tasks.** Both approaches succeeded in all three trials per task. These are preliminary task-specific results, not a general success-rate or performance claim.
 
+## Recorded flight search
+
+[Watch the full, real-time phone recording (MP4, 73 s)](https://github.com/Olorinm/mobile-mcp-jev/raw/refs/heads/main/docs/demos/skyscanner-2026-09-18.mp4) · [Run details and measurements](docs/demos/README.md)
+
+Shanghai–Tokyo, October 20–25, 2026, one adult in economy. This recorded rerun reached actual flight results in **70.23 s**, with **18 executed actions** and **$0.011254** in reported API cost. The video retains a wrong date selection and Jev's subsequent correction. One functional demonstration, with no paired baseline; OpenCode was not in this run.
+
 ## What changes
 
 ```text

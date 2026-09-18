@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-18",
+  "sourceCommit": "1f0b2d5573059af97439dd9149d32f7d52fdba66",
+  "task": {
+    "origin": "Shanghai (Any)",
+    "destination": "Tokyo (Any)",
+    "departure": "2026-10-20",
+    "return": "2026-10-25",
+    "adults": 1,
+    "cabin": "Economy"
+  },
+  "environment": {
+    "platform": "Windows",
+    "androidApi": 35,
+    "androidVersion": "15",
+    "renderer": "software",
+    "display": [
+      1080,
+      2400
+    ],
+    "liveInspectorFrames": true,
+    "nativeScreenRecording": true,
+    "outerAgent": null,
+    "mobilecli": "1.0.9 with local cache-refresh patch",
+    "chromeFallbackEnabled": true
+  },
+  "initialState": "Skyscanner homepage open; Shanghai selected; destination and dates empty; one adult, economy; previous browser state retained",
+  "policy": {
+    "maxSteps": 40,
+    "timeoutMs": 300000,
+    "selectedTabFilter": true,
+    "repeatedOptionFilter": true,
+    "taskSpecificCorrection": false,
+    "humanActionsDuringExecution": 0
+  },
+  "result": {
+    "status": "reported_complete",
+    "executorVerified": false,
+    "independentVerification": {
+      "success": true,
+      "method": "Visual inspection of final screen and calendar selection trace",
+      "criteria": [
+        "origin",
+        "destination",
+        "departure",
+        "return",
+        "adults",
+        "cabin",
+        "visible flight cards"
+      ],
+      "allProvidersFinished": false
+    },
+    "elapsedMs": 70225.24849999999,
+    "executedActions": 18,
+    "discardedDecisions": 2,
+    "timing": {
+      "observationMs": 43064.30190000031,
+      "modelMs": 19970.70029999991,
+      "actionMs": 6676.533600000199,
+      "waitMs": 358.53209999995306
+    },
+    "usage": {
+      "inputTokens": 259148,
+      "outputTokens": 18426,
+      "knownCostUsd": 0.011254489999999999,
+      "completeAccounting": true
+    },
+    "modelCalls": [
+      {
+        "kind": "decision",
+        "models": [
+          "typesafe-ai/jev"
+        ],
+        "calls": 21,
+        "elapsedMs": 18401.974799999967,
+        "inputTokens": 257205,
+        "outputTokens": 18389,
+        "costUsd": 0.01080261
+      },
+      {
+        "kind": "text",
+        "models": [
+          "deepseek/deepseek-v4.1-flash"
+        ],
+        "calls": 1,
+        "elapsedMs": 1568.450599999982,
+        "inputTokens": 1943,
+        "outputTokens": 37,
+        "costUsd": 0.00045188
+      }
+    ]
+  },
+  "recording": {
+    "file": "skyscanner-2026-09-18.mp4",
+    "durationSeconds": 73.35,
+    "dimensions": [
+      720,
+      1600
+    ],
+    "speed": 1,
+    "cuts": 0,
+    "audio": false,
+    "processing": "Original H.264 stream copied without re-encoding; auxiliary data and metadata removed",
+    "bytes": 5803081,
+    "sha256": "b58517b7cd0ab91e91d77af0a52239c935f38cb5e25cc3ef1bbbf1e3463118be"
+  },
+  "actions": [
+    {
+      "step": 0,
+      "operation": "TAP",
+      "targetLabel": "Choose your destination",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 1,
+      "operation": "TYPE",
+      "targetLabel": "Search for country, city or airport",
+      "text": "Tokyo",
+      "outcome": "executed"
+    },
+    {
+      "step": 2,
+      "operation": "TAP",
+      "targetLabel": "Tokyo (Any) Japan",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 3,
+      "operation": "SWIPE_UP",
+      "targetLabel": null,
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 4,
+      "operation": "SWIPE_UP",
+      "targetLabel": null,
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 5,
+      "operation": "TAP",
+      "targetLabel": "Tuesday, October 20, 2026. low price. Select as departure date",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 6,
+      "operation": "TAP",
+      "targetLabel": "Saturday, October 24, 2026. medium price. Select as return date",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 7,
+      "operation": "TAP",
+      "targetLabel": "Apply",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 8,
+      "operation": "TAP",
+      "targetLabel": "Apply",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 9,
+      "operation": "TAP",
+      "targetLabel": "Your travel dates: Oct 20 – 24",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 10,
+      "operation": "TAP",
+      "targetLabel": "Apply",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 11,
+      "operation": "TAP",
+      "targetLabel": "Your travel dates: Oct 20 – 24",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 12,
+      "operation": "TAP",
+      "targetLabel": "Clear return date",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 13,
+      "operation": "SWIPE_UP",
+      "targetLabel": null,
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 14,
+      "operation": "TAP",
+      "targetLabel": "Sunday, October 25, 2026. medium price. Select as return date",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 15,
+      "operation": "TAP",
+      "targetLabel": "Apply",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 16,
+      "operation": "TAP",
+      "targetLabel": "Search",
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 17,
+      "operation": "WAIT",
+      "targetLabel": null,
+      "text": null,
+      "outcome": "executed"
+    },
+    {
+      "step": 18,
+      "operation": "WAIT",
+      "targetLabel": null,
+      "text": null,
+      "outcome": "discarded_stale_screen"
+    },
+    {
+      "step": 19,
+      "operation": "DONE",
+      "targetLabel": null,
+      "text": null,
+      "outcome": "discarded_stale_screen"
+    },
+    {
+      "step": 20,
+      "operation": "DONE",
+      "targetLabel": null,
+      "text": null,
+      "outcome": "reported_complete"
+    }
+  ],
+  "limitations": [
+    "One recorded rerun, not a paired benchmark",
+    "Earlier failed development attempts excluded from this individual elapsed time",
+    "Recording and screenshot overhead included; preparation and external result check excluded",
+    "Prices and page state are transient"
+  ]
+}
