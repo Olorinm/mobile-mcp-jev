@@ -1,12 +1,12 @@
 # Mobile MCP + Jev
 
+**English** | [简体中文](README.zh-CN.md)
+
 **Let Jev choose the next Android action. Let GLM verify the result.**
 
 An experimental [Mobile MCP](https://github.com/mobile-next/mobile-mcp) fork that adds a bounded, multi-step Android executor driven by [Jev](https://vercel.com/ai-gateway/models/jev). The reference agent is **OpenCode 1.18.31 + GLM 5.3 Flash**.
 
 > **Small local benchmark: 1.8–2.5× the baseline speed and 84–87% lower API cost on two simple Android settings tasks.** Both approaches succeeded in all three trials per task. These are preliminary task-specific results, not a general success-rate or performance claim.
-
-中文概括：在两个简单系统设置任务中，速度约为原版的 **1.8–2.5 倍**，API 成本约为原版的 **13%–16%**。搜索任务暴露了 Jev 提前宣布完成的问题，因此默认体验保留 GLM 验收和接管。[完整成绩与局限](RESULTS.md) · [中文使用说明](README-JEV.md)
 
 ## What changes
 
@@ -37,7 +37,7 @@ The initial 18-attempt comparison was **8/9 successful for the baseline, 6/9 for
 
 After an action-history fix, pure Jev still failed all three search follow-ups. The current hybrid approach supplies literal input text and lets GLM verify and recover: **3/3 search follow-ups succeeded**, with **49.41 s median** and **$0.003142 mean API cost**. These were separate follow-ups, not a new paired comparison, and are not pooled with earlier versions.
 
-[Methodology and limitations](RESULTS.md) · [Sanitized per-run measurements](benchmarks/README.md)
+[Detailed results and limitations (Chinese)](RESULTS.md) · [Methodology and sanitized per-run measurements](benchmarks/README.md)
 
 ## Try it
 
@@ -59,7 +59,7 @@ node scripts/opencode-run.mjs baseline "Enable Dark theme in Android Display set
 
 `jev` uses the hybrid path; `baseline` uses the original tools. Reset the initial setting between manual comparisons. Windows users can also use `Try-Jev.cmd` and `Try-Baseline.cmd`.
 
-For another MCP client, launch `node /absolute/path/to/checkout/scripts/start-mcp.mjs`. Set `MOBILE_DEVICE` to the ID from `mobilecli devices`; it may differ from the serial in `adb devices`. See [setup details](README-JEV.md).
+For another MCP client, launch `node /absolute/path/to/checkout/scripts/start-mcp.mjs`. Set `MOBILE_DEVICE` to the ID from `mobilecli devices`; it may differ from the serial in `adb devices`. See [setup details (Chinese)](README-JEV.md).
 
 ## Reproduce
 
