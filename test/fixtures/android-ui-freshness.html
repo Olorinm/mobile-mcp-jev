@@ -1,0 +1,18 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI freshness diagnostic</title>
+<style>
+  body { font: 20px sans-serif; padding: 20px }
+  button { padding: 20px; margin: 10px 0; display: block }
+  section { border: 1px solid; padding: 20px }
+</style>
+<h1>UI freshness diagnostic</h1>
+<section id="dialog">
+  <h2>DIAGNOSTIC OLD DIALOG</h2>
+  <button onclick="document.getElementById('dialog').remove(); document.getElementById('result').hidden=false">Dismiss diagnostic dialog</button>
+</section>
+<section id="result" hidden>
+  <h2>DIAGNOSTIC NEW FORM</h2>
+  <label>Destination <input placeholder="Diagnostic destination"></label>
+  <button>Diagnostic search</button>
+</section>

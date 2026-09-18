@@ -42,6 +42,8 @@ export interface ScreenElement {
 	checked?: boolean;
 	enabled?: boolean;
 	clickable?: boolean;
+	role?: string;
+	expanded?: boolean;
 }
 
 export class ActionableError extends Error {
@@ -54,6 +56,7 @@ export class ActionableError extends Error {
 export type Orientation = "portrait" | "landscape";
 
 export interface ScreenshotOptions {
+	signal?: AbortSignal;
 	format?: "png" | "jpeg";
 	quality?: number;
 	scale?: number;
@@ -167,6 +170,8 @@ export interface Robot {
 	 * Tap on the center of an element by its ref from the latest getElementsOnScreen (e.g. "@e5"). mobilecli only.
 	 */
 	tapByRef?(ref: string): Promise<void>;
+	typeByRef?(ref: string, text: string): Promise<void>;
+	longPressByRef?(ref: string, duration: number): Promise<void>;
 
 	/**
 	 * Tap on a specific coordinate on the screen.

@@ -16,6 +16,6 @@ const {app, session} = createInspectorApp({port});
 const server = app.listen(port, '127.0.0.1', () => console.log(`Jev Inspector: http://127.0.0.1:${port}`));
 server.on('error', () => { console.error('Inspector could not start. Check whether the local port is already in use.'); process.exitCode = 1; });
 for (const event of ['SIGINT', 'SIGTERM']) process.on(event, () => {
-  try { session.control(session.state.runId, 'stop'); } catch {}
+  session.close();
   server.close(); server.closeAllConnections();
 });

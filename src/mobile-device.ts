@@ -1,5 +1,6 @@
 // Modified by mobile-mcp-jev: preserve Android UI attributes for Jev decisions.
 import { Mobilecli } from "./mobilecli";
+import { AndroidChrome } from "./android-chrome";
 import { ActionableError, Button, InstalledApp, Orientation, Robot, ScreenElement, ScreenSize, ScreenshotOptions, SwipeDirection } from "./robot";
 
 interface InstalledAppsResponse {
@@ -104,6 +105,8 @@ const flattenUIElement = (element: UIElementResponse): ScreenElement[] => {
 
 interface AndroidNode {
 	class: string;
+	package?: string;
+	focused?: boolean;
 	text?: string;
 	hint?: string;
 	"content-desc"?: string;
@@ -136,22 +139,56 @@ export function flattenAndroidHierarchy(nodes: AndroidNode[]): ScreenElement[] {
 }
 
 export class MobileDevice implements Robot {
+	private chrome: AndroidChrome;
+	private chromeFallbackActive = false;
 	public async getDetailedElementsOnScreen(): Promise<ScreenElement[]> {
 		const response = this.runJsonCommand<{ data: { rawData: string } }>(["dump", "ui", "--format", "raw"]);
 		const raw = JSON.parse(response.data.rawData);
 		if (!Array.isArray(raw.hierarchy)) { throw new Error("Detailed UI requires Android hierarchy"); }
-		return flattenAndroidHierarchy(raw.hierarchy);
+		const roots: AndroidNode[] = raw.hierarchy;
+		const all: AndroidNode[] = [];
+		const visit = (node: AndroidNode) => { all.push(node); node.children?.forEach(visit); };
+		roots.forEach(visit);
+		const native = flattenAndroidHierarchy(roots);
+		const chrome = all.filter(node => node.visible !== false);
+		if (!chrome.some(node => node["resource-id"]?.startsWith("com.android.chrome:"))) { this.chromeFallbackActive = false; return native; }
+		// Keep native dialogs/omnibox in charge while they cover the page.
+		if (chrome.some(node => node["resource-id"] === "com.android.chrome:id/url_bar" && node.focused) ||
+			chrome.some(node => /^android:id\/(alertTitle|button[123])$/.test(node["resource-id"] || ""))) { return native; }
+		const surface = chrome.find(node => node.class === "android.webkit.WebView") ?? chrome.find(node => node["content-desc"] === "Web View");
+		if (!surface || (!this.chromeFallbackActive && flattenAndroidHierarchy([surface]).length > 1)) { return native; }
+		if ((await this.getForegroundApp()).packageName !== "com.android.chrome") { return native; }
+		this.chromeFallbackActive = true;
+		const toolbarBottom = chrome.filter(node => /\/(toolbar|toolbar_container)$/.test(node["resource-id"] || ""))
+			.reduce((bottom, node) => Math.max(bottom, node.rect.y + node.rect.height), surface.rect.y);
+		const rect = { ...surface.rect, y: toolbarBottom };
+		const strip = (node: AndroidNode): AndroidNode | undefined => node === surface ? undefined :
+			{ ...node, children: node.children?.map(strip).filter((child): child is AndroidNode => !!child) };
+		// New documents may expose no controls during loading. Give them a
+		// bounded settling window instead of returning only the browser toolbar.
+		const deadline = performance.now() + 8000;
+		for (let attempt = 0; ; attempt++) {
+			try {
+				const web = await this.chrome.read(rect);
+				if (web.length) { return [...flattenAndroidHierarchy(roots.map(strip).filter((node): node is AndroidNode => !!node)), ...web]; }
+			} catch { /* A transient page load may not have an accessibility tree yet. */ }
+			if (attempt >= 2 && performance.now() >= deadline) { break; }
+			await new Promise(resolve => setTimeout(resolve, 250));
+		}
+		throw new ActionableError("Chrome webpage controls are unavailable. Check the page and its local ADB/DevTools connection before continuing.");
 	}
 
 	private mobilecli: Mobilecli;
 
 	public constructor(private deviceId: string) {
 		this.mobilecli = new Mobilecli();
+		this.chrome = new AndroidChrome(deviceId);
 	}
 
 	private runCommand(args: string[]): string {
 		const fullArgs = [...args, "--device", this.deviceId];
-		return this.mobilecli.executeCommand(fullArgs);
+		// A disconnected device must not leave the agent waiting indefinitely.
+		return this.mobilecli.executeCommand(fullArgs, 30000);
 	}
 
 	private runJsonCommand<T>(args: string[]): T {
@@ -242,7 +279,7 @@ export class MobileDevice implements Robot {
 			fullArgs.push("--scale", `${options.scale}`);
 		}
 
-		return this.mobilecli.executeCommandBuffer(fullArgs);
+		return this.mobilecli.executeCommandBufferAsync(fullArgs, options?.signal);
 	}
 
 	public async listApps(): Promise<InstalledApp[]> {
@@ -300,7 +337,18 @@ export class MobileDevice implements Robot {
 	}
 
 	public async tapByRef(ref: string): Promise<void> {
+		if (ref.startsWith("cdp:")) { await this.chrome.activate(ref); return; }
 		this.runCommand(["io", "tap", ref]);
+	}
+
+	public async typeByRef(ref: string, text: string): Promise<void> {
+		if (ref.startsWith("cdp:")) { await this.chrome.activate(ref, text); return; }
+		await this.tapByRef(ref); await this.sendKeys(text);
+	}
+
+	public async longPressByRef(ref: string, duration: number): Promise<void> {
+		if (ref.startsWith("cdp:")) { await this.chrome.activate(ref, undefined, duration); return; }
+		this.runCommand(["io", "longpress", ref, "--duration", `${duration}`]);
 	}
 
 	public async doubleTap(x: number, y: number): Promise<void> {

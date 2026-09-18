@@ -1,18 +1,21 @@
 import { root } from './local-env.mjs';
 import { join } from 'node:path';
 export const opencode = process.env.OPENCODE_BIN || join(root,'.local/opencode/node_modules/opencode-windows-x64/bin/opencode.exe');
+// Keep this pinned CLI's database separate from other installed OpenCode versions.
+export const runtimeEnvironment = Object.fromEntries(['DATA','CONFIG','CACHE','STATE'].map(kind =>
+  [`XDG_${kind}_HOME`, join(root,'.local/opencode-runtime',kind.toLowerCase())]));
 const originalTools = ['mobile_list_elements_on_screen','mobile_click_on_screen_at_coordinates','mobile_swipe_on_screen','mobile_type_keys','mobile_press_button','mobile_list_apps','mobile_launch_app','mobile_get_foreground_app','mobile_batch_commands'];
 export function config(mode) {
   const allowed = mode === 'jev' ? ['mobile_jev_run'] : mode==='hybrid' ? [...originalTools,'mobile_jev_run'] : originalTools;
   return {
     $schema:'https://opencode.ai/config.json',
-    model:'mobile-gateway/zai/glm-5.3-flash',
-    small_model:'mobile-gateway/zai/glm-5.3-flash',
+    model:'mobile-gateway/deepseek/deepseek-v4.1-flash',
+    small_model:'mobile-gateway/deepseek/deepseek-v4.1-flash',
     enabled_providers:['mobile-gateway'],
     share:'disabled', autoupdate:false, snapshot:false,
     provider:{'mobile-gateway':{npm:'@ai-sdk/openai-compatible',name:'Vercel AI Gateway (mobile experiment)',
       options:{baseURL:'https://ai-gateway.vercel.sh/v1',apiKey:'{env:AI_GATEWAY_API_KEY}'},
-      models:{'zai/glm-5.3-flash':{name:'GLM 5.3 Flash',limit:{context:1000000,output:8192},cost:{input:0.15,output:0.5,cache_read:0.03},toolcall:true}}
+      models:{'deepseek/deepseek-v4.1-flash':{name:'DeepSeek V4.1 Flash',limit:{context:1048576,output:32768},cost:{input:0.3,output:1.2,cache_read:0.03},toolcall:true}}
     }},
     mcp:{mobile:{type:'local',command:[process.execPath,'--env-file='+join(root,'.env'),join(root,'lib/index.js')],enabled:true,timeout:180000,
       environment:{ANDROID_HOME:process.env.ANDROID_HOME,ANDROID_SDK_ROOT:process.env.ANDROID_HOME,PATH:process.env.PATH,MOBILEMCP_DISABLE_TELEMETRY:'1',MOBILEMCP_ENABLE_JEV:mode!=='baseline'?'1':'0'}}},

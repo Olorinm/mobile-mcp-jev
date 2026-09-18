@@ -26,11 +26,14 @@ const runs = rows.map(r => {
     } : null,
   };
 });
+const models = [...new Set(rows.map(r => r.model?.replace('mobile-gateway/', '') || 'zai/glm-5.3-flash'))];
+if (models.some(m => !['zai/glm-5.3-flash', 'deepseek/deepseek-v4.1-flash'].includes(m))) throw new Error('Unrecognized benchmark model');
+if (models.length !== 1) throw new Error('Export each model comparison separately');
 const output = resolve(destination);
 mkdirSync(dirname(output), { recursive: true });
 writeFileSync(output, JSON.stringify({
   schemaVersion: 1, phase, date: '2026-09-18', environment: 'Windows; Android 15/API 35 emulator; 720x1280',
-  versions: { opencode: '1.18.31', aiSdk: '7.0.105', baselineModel: 'zai/glm-5.3-flash', evaluator: 'typesafe-ai/jev', upstream: '63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11' },
+  versions: { opencode: '1.18.31', aiSdk: '7.0.105', baselineModel: models[0], evaluator: 'typesafe-ai/jev', upstream: '63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11' },
   note: 'Allowlisted per-run measurements only. Raw logs, UI text, screenshots, IDs, absolute paths and credentials are excluded. Missing usage is not zero.',
   runs,
 }, null, 2) + '\n');

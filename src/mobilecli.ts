@@ -1,6 +1,7 @@
+// Modified by mobile-mcp-jev: add cancellable, nonblocking screenshot reads.
 import { existsSync } from "node:fs";
 import { dirname, join, sep } from "node:path";
-import { execFileSync, spawn, ChildProcess } from "node:child_process";
+import { execFile, execFileSync, spawn, ChildProcess } from "node:child_process";
 
 export interface MobilecliCrashEntry {
 	processName: string;
@@ -105,6 +106,16 @@ export class Mobilecli {
 			maxBuffer: MAX_BUFFER_SIZE,
 			timeout: TIMEOUT,
 		}) as Buffer;
+	}
+
+	/** Screenshot reads must not block model responses or inspector controls. */
+	public executeCommandBufferAsync(args: string[], signal?: AbortSignal): Promise<Buffer> {
+		return new Promise((resolve, reject) => {
+			execFile(this.getPath(), args, { encoding: "buffer", maxBuffer: MAX_BUFFER_SIZE,
+				timeout: TIMEOUT, windowsHide: true, signal }, (error, stdout) => {
+				if (error) { reject(error); } else { resolve(stdout); }
+			});
+		});
 	}
 
 	private static getMobilecliPath(): string {

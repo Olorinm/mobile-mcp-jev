@@ -1,0 +1,45 @@
+diff --git a/agents/android/java/UiTreeSerializer.java b/agents/android/java/UiTreeSerializer.java
+index c3d62b8..4176e3d 100644
+--- a/agents/android/java/UiTreeSerializer.java
++++ b/agents/android/java/UiTreeSerializer.java
+@@ -1,7 +1,9 @@
+ package com.mobilenext.mobilecli;
+ 
+ import android.app.UiAutomation;
++import android.accessibilityservice.AccessibilityServiceInfo;
+ import android.graphics.Rect;
++import android.os.Build;
+ import android.util.Log;
+ import android.view.accessibility.AccessibilityNodeInfo;
+ import android.view.accessibility.AccessibilityWindowInfo;
+@@ -34,6 +36,10 @@ class UiTreeSerializer {
+ 			}
+ 		}
+ 
++		// A persistent UiAutomation can keep obsolete WebView descendants even
++		// after waitForIdle. Invalidate before retrieving any windows or roots.
++		clearAccessibilityCache(automation);
++
+ 		List<AccessibilityNodeInfo> roots = new ArrayList<>();
+ 		for (AccessibilityWindowInfo window : automation.getWindows()) {
+ 			// The soft keyboard is noise for most callers: skip IME windows unless asked for a full dump.
+@@ -64,6 +70,19 @@ class UiTreeSerializer {
+ 		}
+ 	}
+ 
++	private static void clearAccessibilityCache(UiAutomation automation) {
++		if (Build.VERSION.SDK_INT >= 34 && automation.clearCache()) {
++			return;
++		}
++		// Before API 34, reapplying the same service info clears this connection's
++		// accessibility cache without disconnecting or changing its flags.
++		AccessibilityServiceInfo info = automation.getServiceInfo();
++		if (info == null) {
++			throw new IllegalStateException("Accessibility service is unavailable");
++		}
++		automation.setServiceInfo(info);
++	}
++
+ 	private static String str(CharSequence cs) {
+ 		return cs == null ? "" : cs.toString();
+ 	}

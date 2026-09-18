@@ -1,10 +1,10 @@
 # Mobile MCP + Jev 使用说明
 
-本项目是 Mobile MCP 的实验性 fork，主 Agent 为 **OpenCode 1.18.31 + GLM 5.3 Flash**，Jev 通过 Vercel AI Gateway / AI SDK 7.0.105 接入。默认流程是 **Jev 连续执行 → GLM 检查完整目标 → 必要时用原版工具接管**。
+本项目是 Mobile MCP 的实验性 fork，当前主 Agent 为 **OpenCode 1.18.31 + DeepSeek V4.1 Flash**，Jev 通过 Vercel AI Gateway / AI SDK 7.0.105 接入。默认流程是 **Jev 连续执行 → DeepSeek 检查完整目标 → 必要时用原版工具接管**。
 
 ## 安装
 
-参考运行器和基准在 Windows + Android 15 模拟器上验证，需要 Node.js 22.12+、Android SDK / ADB、在线测试设备，以及可访问 Jev 和 GLM 的 Vercel AI Gateway Key。
+参考运行器和基准在 Windows + Android 15 模拟器上验证，需要 Node.js 22.12+、Android SDK / ADB、在线测试设备，以及可访问 Jev 和 DeepSeek 的 Vercel AI Gateway Key。
 
 ```powershell
 git clone https://github.com/Olorinm/mobile-mcp-jev.git
@@ -36,7 +36,7 @@ node scripts/opencode-run.mjs baseline "Enable Dark theme in Android Display set
 
 1. 代码保留控件的可点击、可见、启用和勾选状态，并合并可点击容器与子文本。
 2. 同一请求同时选择操作、目标以及已知输入文本；只执行选中操作对应的答案。
-3. 已知输入字符串直接传入，只有确实需要生成文字时才调用 GLM。
+3. 已知输入字符串直接传入，只有确实需要生成文字时才调用 DeepSeek。
 4. 点击前重新观察；页面变化就丢弃旧决定。只有已执行动作进入下一轮记忆。
 5. 限制步数、运行时间及连续无进展次数。执行记录与模型用量随结果返回。
 
@@ -55,7 +55,7 @@ npm run benchmark:jev
 
 基准只允许测试模拟器，会重置主题、屏幕超时和设置首页；搜索任务还会清除 Settings Intelligence 数据并预热空白搜索页。普通工具操作不会清除数据。API 调用会产生费用。
 
-首轮 18 次比较的是原版与初版纯 Jev；后续两组搜索复测分别测试历史修复和混合接管。不同阶段不合并成功率，详见 [RESULTS.md](RESULTS.md)。当前代码包含后续修复，重跑不能视作精确复现首轮旧版本。
+首轮 18 次比较的是原版与初版纯 Jev；后续两组搜索复测分别测试历史修复和混合接管。不同阶段不合并成功率，历史成绩使用 GLM 5.3 Flash，详见 [RESULTS.md](RESULTS.md)。当前代码包含后续修复，重跑不能视作精确复现首轮旧版本。
 
 外层费用由 OpenCode 根据用量和配置单价估算，内部调用使用 Gateway 返回费用。模型单价以测试日期为准，可能变化。没有返回的账单不当作零。
 

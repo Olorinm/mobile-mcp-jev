@@ -12,3 +12,8 @@ observations, OpenCode/GLM runners, benchmark verification, privacy-preserving
 measurement exports, documentation, and a fork-specific CI workflow.
 
 The integration design was inspired by browser-use/jev-ultrafast.
+
+The Pixel 10 device artwork in inspector/assets/pixel-10 is from the Android
+Open Source Project's Android Studio device-art resources, under the Apache
+License, Version 2.0. Copyright (C) 2025 The Android Open Source Project.
+See inspector/assets/pixel-10/README.md for its source revision and layout.

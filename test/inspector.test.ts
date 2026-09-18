@@ -6,6 +6,13 @@ import { activeJevDevices, runJev } from "../src/jev";
 import { Robot } from "../src/robot";
 
 const task: InspectorTask = { device: "inspector-test", goal: "Enable Dark theme", automatic: false, maxSteps: 4, timeoutMs: 5000 };
+// Minimal JPEG frame header: height=1280, width=720.
+const jpeg = Buffer.from("ffd8ffc0000808050002d003", "hex");
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>(r => { resolve = r; });
+	return { promise, resolve };
+}
 let previousKey: string | undefined;
 test.beforeEach(() => { previousKey = process.env.AI_GATEWAY_API_KEY; process.env.AI_GATEWAY_API_KEY = "inspector-test-placeholder"; });
 test.afterEach(() => { if (previousKey === undefined) { delete process.env.AI_GATEWAY_API_KEY; } else { process.env.AI_GATEWAY_API_KEY = previousKey; } });
@@ -15,7 +22,7 @@ function fixture() {
 	const robot = {
 		getDetailedElementsOnScreen: async () => [{ type: "Switch", label: "Dark theme", enabled: true, clickable: true, checked: phone.checked, rect: { x: 20, y: 100, width: 200, height: 60 } }],
 		getScreenSize: async () => ({ width: 720, height: 1280, scale: 1 }),
-		getScreenshot: async () => Buffer.from("test-image"),
+		getScreenshot: async () => jpeg,
 		tap: async () => { phone.taps++; phone.checked = true; },
 	} as unknown as Robot;
 	const evaluate = async ({ questions }: any) => {
@@ -90,6 +97,97 @@ test("automatic mode executes and preview/start are blocked while running", asyn
 	phone.checked = false;
 	session.start({ ...task, automatic: true }); await session.done;
 	expect(phone.taps).toBe(2);
+});
+
+test("a stalled screenshot cannot hold up decisions, actions or completion", async () => {
+	const { phone, session, robot } = fixture();
+	const image = deferred<Buffer>();
+	let captures = 0;
+	robot.getScreenshot = async () => { captures++; return image.promise; };
+	robot.getScreenSize = async () => { throw new Error("No device-info reads for frame dimensions"); };
+	session.start({ ...task, automatic: true });
+	await session.done;
+	expect(phone.calls).toBe(2);
+	expect(phone.taps).toBe(1);
+	expect(session.state.result?.status).toBe("reported_complete");
+	expect(captures).toBe(1); // No screenshot backlog or parallel captures.
+	expect(session.state.frame).toBeUndefined();
+	image.resolve(jpeg);
+	await session.framesDone;
+	expect(captures).toBe(2); // One fresh final view after the pending capture.
+	expect(session.state.frame).toMatchObject({ width: 720, height: 1280 });
+	expect(session.state.frame?.screen).toBeUndefined();
+});
+
+test("screenshots refresh while review is paused and stop after the final frame", async () => {
+	const { session, robot } = fixture();
+	let captures = 0;
+	robot.getScreenshot = async () => { captures++; return jpeg; };
+	const id = session.start(task);
+	await expect.poll(() => session.state.status).toBe("paused");
+	await expect.poll(() => captures).toBeGreaterThanOrEqual(2);
+	expect(session.state.frame?.screen?.elements[0].label).toBe("Dark theme");
+	session.control(id, "step", session.state.pendingStep);
+	await session.done;
+	await session.framesDone;
+	const finishedCount = captures;
+	await new Promise(resolve => setTimeout(resolve, 600));
+	expect(captures).toBe(finishedCount);
+	expect(session.state.frame?.screen).toBeUndefined();
+});
+
+test("capture failure does not fail a run and a later frame recovers", async () => {
+	const { phone, session, robot } = fixture();
+	let captures = 0;
+	robot.getScreenshot = async () => {
+		if (++captures === 1) { throw new Error("Camera read failed"); }
+		return jpeg;
+	};
+	session.start({ ...task, automatic: true });
+	await session.done; await session.framesDone;
+	expect(phone.taps).toBe(1);
+	expect(session.state.result?.status).toBe("reported_complete");
+	expect(session.state.imageError).toBe(false);
+	expect(session.state.frame).toBeDefined();
+});
+
+test("a frame from an old run cannot overwrite the new session", async () => {
+	const { phone, session, robot } = fixture();
+	const oldImage = deferred<Buffer>();
+	let oldSignal: AbortSignal | undefined;
+	let captures = 0;
+	robot.getScreenshot = async options => {
+		if (++captures === 1) { oldSignal = options?.signal; return oldImage.promise; }
+		return jpeg;
+	};
+	session.start({ ...task, automatic: true });
+	await session.done;
+	const oldFramesDone = session.framesDone;
+	phone.checked = false;
+	const second = session.start(task);
+	await expect.poll(() => session.state.status).toBe("paused");
+	expect(oldSignal?.aborted).toBe(true);
+	const latestFrame = session.state.frame;
+	oldImage.resolve(Buffer.from("invalid-old-image"));
+	await oldFramesDone;
+	expect(session.state.frame).toBe(latestFrame);
+	expect(session.state.imageError).toBe(false);
+	session.control(second, "stop"); await session.done; await session.framesDone;
+});
+
+test("closing the inspector cancels its in-flight image read", async () => {
+	const { session, robot } = fixture();
+	let imageSignal: AbortSignal | undefined;
+	robot.getScreenshot = async options => {
+		imageSignal = options?.signal;
+		return new Promise<Buffer>((_resolve, reject) => imageSignal!.addEventListener("abort", () => reject(new Error("aborted")), { once: true }));
+	};
+	session.start(task);
+	await expect.poll(() => session.state.status).toBe("paused");
+	session.close();
+	await session.done; await session.framesDone;
+	expect(imageSignal?.aborted).toBe(true);
+	expect(session.state.imageError).toBeUndefined();
 });
 
 test("local API blocks cross-origin and invalid requests and never serves local secrets", async () => {

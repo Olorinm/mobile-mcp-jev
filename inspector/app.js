@@ -6,6 +6,7 @@ const copy = {
     "tokens": "Token usage",
     "device": "Android device",
     "goal": "What should happen?",
+    "taskTitle": "Task",
     "app": "App package · optional",
     "options": "Device & options",
     "texts": "Input strings · one per line",
@@ -13,7 +14,7 @@ const copy = {
     "timeout": "Time limit · seconds",
     "review": "Review step",
     "runAuto": "Run automatically",
-    "modeNote": "This panel follows the Jev executor. GLM only generates input text when needed; OpenCode verification is a separate mode.",
+    "modeNote": "Jev chooses actions; DeepSeek generates input text when needed. OpenCode verification uses a separate runner.",
     "screenTitle": "Screen",
     "preview": "Refresh",
     "showElements": "Controls",
@@ -45,7 +46,6 @@ const copy = {
     "writing": "Preparing input text",
     "acting": "Executing",
     "emptyDecision": "No decision yet",
-    "emptyDecisionHint": "Start a task to see the next action.",
     "readyDecision": "PROPOSED ACTION",
     "thinking": "CURRENT PHASE",
     "waitingHint": "Waiting for execution.",
@@ -103,6 +103,7 @@ const copy = {
     "tokens": "Token 用量",
     "device": "Android 设备",
     "goal": "希望完成什么？",
+    "taskTitle": "任务",
     "app": "应用包名 · 可选",
     "options": "设备与参数",
     "texts": "输入文字 · 每行一项",
@@ -110,7 +111,7 @@ const copy = {
     "timeout": "时间上限 · 秒",
     "review": "查看下一步",
     "runAuto": "自动运行",
-    "modeNote": "面板跟随 Jev 执行器。GLM 仅按需生成输入文字；OpenCode 验收接管是另一个入口。",
+    "modeNote": "Jev 选择动作，DeepSeek 按需生成输入文字；OpenCode 验收接管使用单独的入口。",
     "screenTitle": "画面",
     "preview": "刷新",
     "showElements": "控件",
@@ -141,8 +142,7 @@ const copy = {
     "deciding": "Jev 正在判断",
     "writing": "正在准备输入文字",
     "acting": "正在执行",
-    "emptyDecision": "还没有决策",
-    "emptyDecisionHint": "开始任务后显示。",
+    "emptyDecision": "暂无决策",
     "readyDecision": "准备执行的动作",
     "thinking": "当前阶段",
     "waitingHint": "等待执行。",
@@ -276,7 +276,7 @@ function render() {
     if(label)summary.append(node('p','',label));
     if(last.action.text!==undefined)summary.append(node('p','',`${t('input')}: ${last.action.text}`));
     summary.append(node('p','',t(finalStatus?(last.outcome==='selected'?'not_executed':'terminalHint'):state.status==='paused'?'waitingHint':'autoHint')));
-  }else{summary.append(node('div','decision-kicker',t(active()?'thinking':'readyDecision')),node('strong','',t(active()?phase||state.status:'emptyDecision')),node('p','',t('emptyDecisionHint')));}
+  }else{summary.append(node('div','placeholder',t(active()?phase||state.status:'emptyDecision')));}
   const answers=last?.probabilities;
   probabilities($('operations'),answers?.operation,id=>t(id));
   const kind=({TAP:'tap_target',TYPE:'type_target',LONG_PRESS:'long_press_target',LAUNCH_APP:'app_target'})[last?.action.operation];
@@ -287,12 +287,12 @@ function render() {
   const frame=state.frame;
   $('phone').hidden=!frame;$('empty-screen').hidden=!!frame;
   if(frame){
-    $('phone').style.setProperty('--phone-ratio',String(frame.width/frame.height));
+    $('phone-frame').style.setProperty('--phone-ratio',String(frame.width/frame.height));
     if($('screen-image').getAttribute('src')!==frame.data)$('screen-image').src=frame.data;
     $('frame-time').textContent=`${t('snapshotAt')} ${new Date(frame.capturedAt).toLocaleTimeString([], {hour12:false})}`;
     const overlay=$('overlays');overlay.replaceChildren();
-    const same=last?.screen.fingerprint===frame.screen.fingerprint;
-    for(const element of frame.screen.elements.filter(e=>e.clickable!==false&&e.enabled!==false)){
+    const same=last?.screen.fingerprint===frame.screen?.fingerprint;
+    for(const element of (frame.screen?.elements||[]).filter(e=>e.clickable!==false&&e.enabled!==false)){
       const box=node('button','element-box'+(same&&last.action.target===element.id?' selected':''));box.type='button';
       box.title=`${element.id} · ${element.label}`;box.setAttribute('aria-label',box.title);box.append(node('span','',element.id));
       box.style.left=`${element.rect.x/frame.width*100}%`;box.style.top=`${element.rect.y/frame.height*100}%`;

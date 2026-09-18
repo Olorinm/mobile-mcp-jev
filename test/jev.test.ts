@@ -32,6 +32,18 @@ test("Android targets preserve switch state, ignore headings and offscreen rows"
 	expect(q.type_target).toBeUndefined();
 });
 
+test("decision heads retain the goal and control state while selected tabs are not offered again", () => {
+	const screen = snapshot([
+		{ type: "Button", role: "tab", label: "Overview", selected: true, clickable: true, rect },
+		{ type: "Button", role: "tab", label: "Details", selected: false, clickable: true, rect },
+		{ type: "Button", role: "checkbox", label: "Notifications", checked: true, clickable: true, rect },
+	]);
+	const q = questionsFor(screen, [], [], [], "Inspect notification settings");
+	expect(q.tap_target.criteria.e1).toBeUndefined();
+	expect(JSON.parse(q.tap_target.criteria.e3).checked).toBe(true);
+	for (const question of Object.values(q)) { expect(JSON.parse(question.instructions).goal).toBe("Inspect notification settings"); }
+});
+
 test("snapshot identity ignores ref renumbering and status clock but catches checked/position changes", () => {
 	const element = { type: "Switch", label: "Dark theme", rect, ref: "@e1", checked: false };
 	const a = snapshot([element]);
@@ -52,6 +64,21 @@ test("rejects invented choices and malformed probability distributions", () => {
 	]) { expect(() => validChoice(answer, q)).toThrow(); }
 });
 
+test("a repeated state-action cycle removes only the exhausted option", () => {
+	const screen = snapshot([{ type: "Button", label: "Search", clickable: true, rect }]);
+	const other = snapshot([{ type: "Button", label: "Other", clickable: true, rect }]);
+	const trace: any[] = [
+		{ screen, action: { operation: "SWIPE_UP" }, outcome: "executed" },
+		{ screen: other, action: { operation: "SWIPE_DOWN" }, outcome: "executed" },
+		{ screen, action: { operation: "SWIPE_UP" }, outcome: "executed" },
+	];
+	const q = questionsFor(screen, [], [], trace);
+	expect(q.operation.criteria.SWIPE_UP).toBeUndefined();
+	expect(q.operation.criteria.SWIPE_DOWN).toBeDefined();
+	expect(q.operation.criteria.TAP).toBeDefined();
+	expect(questionsFor(other, [], [], trace).operation.criteria.SWIPE_UP).toBeDefined();
+});
+
 test("a cancelled run releases its lock and makes no device calls", async () => {
 	const old = process.env.AI_GATEWAY_API_KEY;
 	process.env.AI_GATEWAY_API_KEY = "unit-test-placeholder";
@@ -62,6 +89,58 @@ test("a cancelled run releases its lock and makes no device calls", async () => 
 		expect(result.calls).toHaveLength(0);
 		expect(result.verified).toBe(false);
 		expect(activeJevDevices.has("test")).toBe(false);
+	} finally {
+		if (old === undefined) { delete process.env.AI_GATEWAY_API_KEY; } else { process.env.AI_GATEWAY_API_KEY = old; }
+	}
+});
+
+test("completion is re-evaluated while results settle, without accepting stale evidence", async () => {
+	const old = process.env.AI_GATEWAY_API_KEY;
+	process.env.AI_GATEWAY_API_KEY = "unit-test-placeholder";
+	let reads = 0;
+	const robot = { getElementsOnScreen: async () => [{ type: "TextView", label: `Results ${Math.min(++reads, 4)}`, clickable: false, rect }] } as unknown as Robot;
+	try {
+		const result = await runJev(robot, { device: "settling-results", goal: "Read results", maxSteps: 8 }, {
+			evaluate: (async ({ questions }: any) => ({ answers: { operation: { type: "choice", choice: "DONE", probabilities:
+				Object.fromEntries(Object.keys(questions.operation.criteria).map(k => [k, k === "DONE" ? 1 : 0])) } } })) as any,
+		});
+		expect(result.trace.slice(0, 3).every(t => t.outcome === "discarded_stale_screen")).toBe(true);
+		expect(result.status).toBe("reported_complete");
+		expect(result.verified).toBe(false);
+		expect(result.finalScreen.elements[0].label).toBe("Results 4");
+	} finally {
+		if (old === undefined) { delete process.env.AI_GATEWAY_API_KEY; } else { process.env.AI_GATEWAY_API_KEY = old; }
+	}
+});
+
+test("the text helper types only a validated tool argument, never analysis prose", async () => {
+	const old = process.env.AI_GATEWAY_API_KEY;
+	process.env.AI_GATEWAY_API_KEY = "unit-test-placeholder";
+	let entered = "";
+	let writes = 0;
+	const robot = {
+		getElementsOnScreen: async () => [{ type: "EditText", label: entered || "Search", rect }],
+		tap: async () => {}, sendKeys: async (text: string) => { entered = text; writes++; },
+	} as unknown as Robot;
+	const evaluate = async ({ questions }: any) => ({ answers: Object.fromEntries(Object.entries(questions).map(([key, q]: [string, any]) => {
+		const choice = key === "operation" ? entered ? "DONE" : "TYPE" : Object.keys(q.criteria)[0];
+		return [key, { type: "choice", choice, probabilities: Object.fromEntries(Object.keys(q.criteria).map(id => [id, id === choice ? 1 : 0])) }];
+	})) });
+	try {
+		const result = await runJev(robot, { device: "text-test", goal: "Search for train schedules" }, {
+			evaluate: evaluate as any,
+			generateText: (async (request: any) => {
+				expect(request.reasoning).toBe("none");
+				expect(request.toolChoice).toEqual({ type: "tool", toolName: "write_text" });
+				return { text: "Here is my analysis. Never type this.", toolCalls: [{ toolName: "write_text", input: { text: "train schedules" } }], reasoning: [], usage: { inputTokens: 30, outputTokens: 8,
+					outputTokenDetails: { reasoningTokens: 0 } } };
+			}) as any,
+		});
+		expect(result.status).toBe("reported_complete");
+		expect(writes).toBe(1);
+		expect(entered).toBe("train schedules");
+		expect(result.calls.find(call => call.kind === "text")?.model).toBe("deepseek/deepseek-v4.1-flash");
+		expect(result.calls.find(call => call.kind === "text")?.reasoning).toEqual({ requested: "none", returnedParts: 0, tokens: 0 });
 	} finally {
 		if (old === undefined) { delete process.env.AI_GATEWAY_API_KEY; } else { process.env.AI_GATEWAY_API_KEY = old; }
 	}

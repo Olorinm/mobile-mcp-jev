@@ -153,7 +153,7 @@ const languageOptions = {
 
 export default [
 	{
-		ignores: ["coverage/**", "lib/**", "node_modules/**", "test-results/**", "playwright-report/**"],
+		ignores: [".local/**", "benchmark-results/**", "coverage/**", "lib/**", "node_modules/**", "test-results/**", "playwright-report/**"],
 	},
 	{
 		files: ["**/*.ts"],

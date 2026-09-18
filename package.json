@@ -2,7 +2,7 @@
   "name": "@olorinm/mobile-mcp-jev",
   "mcpName": "io.github.Olorinm/mobile-mcp-jev",
   "version": "0.0.1",
-  "description": "Experimental Mobile MCP fork with Jev Android execution and GLM verification",
+  "description": "Experimental Mobile MCP fork with Jev Android execution and DeepSeek verification",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Olorinm/mobile-mcp-jev.git"

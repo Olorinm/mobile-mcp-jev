@@ -4,6 +4,7 @@ export const NEXT_ACTION = `Choose one supported operation that advances the use
 Use the foreground app, available installed apps, observed controls, current field values, and recent action results.
 Navigate between pages or applications when the goal requires it. Choose LAUNCH_APP to open an available application, or HOME to reach the launcher.
 Preserve states that already satisfy the goal. Avoid repeating completed steps or entering text already present; TYPE appends text.
+Scroll to reveal required controls or values that are not yet visible. Reopening an already selected tab does not reveal offscreen content.
 Complete required inputs and selections before submitting. Entered text alone does not establish that a search or form was submitted.
 Use WAIT only when current observations indicate a transition or loading, and no useful action is ready.
 An executed action is not proof of progress. Use screenChanged and current observations; do not keep repeating actions that leave the state unchanged.

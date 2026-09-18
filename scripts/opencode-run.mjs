@@ -1,5 +1,5 @@
 import { root, device } from './local-env.mjs';
-import { config, opencode } from './opencode-config.mjs';
+import { config, opencode, runtimeEnvironment } from './opencode-config.mjs';
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -9,5 +9,5 @@ const cwd=join(root,'.local/opencode-work');mkdirSync(cwd,{recursive:true});
 const goal=words.join(' ') || 'Enable Dark theme in Android Display settings.';
 const c=config(mode==='jev'?'hybrid':mode);
 const prompt=`Android device: ${device}. Task: ${goal}. ${mode==='jev'?'Start with mobile_jev_run; it can choose and launch installed apps. Check its final screen against the goal and finish any remaining work with ordinary tools.':''}`;
-const child=spawn(opencode,['run','--format','default','--agent','mobile','--title','Mobile task',prompt],{cwd,windowsHide:true,stdio:['ignore','inherit','inherit'],env:{...process.env,OPENCODE_DISABLE_MODELS_FETCH:'1',OPENCODE_DISABLE_DEFAULT_PLUGINS:'1',OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER:'1',OPENCODE_CONFIG_CONTENT:JSON.stringify(c)}});
+const child=spawn(opencode,['run','--format','default','--agent','mobile','--title','Mobile task',prompt],{cwd,windowsHide:true,stdio:['ignore','inherit','inherit'],env:{...process.env,...runtimeEnvironment,OPENCODE_DISABLE_MODELS_FETCH:'1',OPENCODE_DISABLE_DEFAULT_PLUGINS:'1',OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER:'1',OPENCODE_CONFIG_CONTENT:JSON.stringify(c)}});
 child.on('error',e=>{console.error(e.message);process.exitCode=1;});child.on('close',code=>{process.exitCode=code??1;});

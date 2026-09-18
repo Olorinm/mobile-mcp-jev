@@ -1,5 +1,5 @@
 import { root, device } from './local-env.mjs';
-import { config, opencode } from './opencode-config.mjs';
+import { config, opencode, runtimeEnvironment } from './opencode-config.mjs';
 import { spawn, execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -30,6 +30,7 @@ const directory = process.env.BENCH_RESUME_DIR || join(root,'benchmark-results',
 mkdirSync(directory,{recursive:true});
 const cwd=join(root,'.local/opencode-work');mkdirSync(cwd,{recursive:true});
 const rows=process.env.BENCH_RESUME_DIR ? JSON.parse(readFileSync(join(directory,'results.json'),'utf8')) : [];
+if(rows.some(r => r.model !== config('baseline').model)) throw new Error('Cannot resume results from a different or historical model; use a new run directory');
 
 async function run(mode,task,repeat) {
   shell('input','keyevent','WAKEUP'); shell('wm','dismiss-keyguard');
@@ -72,7 +73,7 @@ async function run(mode,task,repeat) {
   const start=performance.now();
   const child=spawn(opencode,['run','--format','json','--agent','mobile','--title',`Mobile benchmark ${stem}`,prompt],{
     cwd,windowsHide:true,stdio:['ignore','pipe','pipe'],
-    env:{...process.env,OPENCODE_DISABLE_MODELS_FETCH:'1',OPENCODE_DISABLE_DEFAULT_PLUGINS:'1',OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER:'1',OPENCODE_CONFIG_CONTENT:JSON.stringify(c)}
+    env:{...process.env,...runtimeEnvironment,OPENCODE_DISABLE_MODELS_FETCH:'1',OPENCODE_DISABLE_DEFAULT_PLUGINS:'1',OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER:'1',OPENCODE_CONFIG_CONTENT:JSON.stringify(c)}
   });
   child.stdout.on('data',d=>{stdout+=d;appendFileSync(join(directory,stem+'.live.jsonl'),d);});child.stderr.on('data',d=>{stderr+=d;});
   const timeout=setTimeout(()=>{timedOut=true;execFileSync('taskkill',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});},180000);
@@ -102,6 +103,7 @@ async function run(mode,task,repeat) {
   }
   writeFileSync(join(directory,stem+'-after.png'),await robot.getScreenshot({maxSize:720}));
   const row={task:task.id,goal:task.goal,mode,repeat,artifactStem:stem,exitCode:code,timedOut,elapsedMs,verification,outer,jev,jevRuns,
+    model:c.model, modelPricing:c.provider['mobile-gateway'].models['deepseek/deepseek-v4.1-flash'].cost,
     totalCostUsd:outer.costUsd+(jev?.usage?.knownCostUsd??0),
     tokenAccounting:'OpenCode output excludes its separately reported reasoning; both are included in OpenCode cost. Jev counts are from Gateway.',
     tools:toolEvents.map(e=>({tool:e.part.tool,input:e.part.state?.input,status:e.part.state?.status,time:e.part.state?.time})),

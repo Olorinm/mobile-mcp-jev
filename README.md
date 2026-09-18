@@ -2,23 +2,23 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-**Let Jev choose the next Android action. Let GLM verify the result.**
+**Let Jev choose the next Android action. Let DeepSeek verify the result.**
 
-An experimental [Mobile MCP](https://github.com/mobile-next/mobile-mcp) fork that adds a bounded, multi-step Android executor driven by [Jev](https://vercel.com/ai-gateway/models/jev). The reference agent is **OpenCode 1.18.31 + GLM 5.3 Flash**.
+An experimental [Mobile MCP](https://github.com/mobile-next/mobile-mcp) fork that adds a bounded, multi-step Android executor driven by [Jev](https://vercel.com/ai-gateway/models/jev). The current reference agent is **OpenCode 1.18.31 + DeepSeek V4.1 Flash**. Published benchmark results below used GLM 5.3 Flash and have not been rerun with DeepSeek.
 
 > **Small local benchmark: 1.8–2.5× the baseline speed and 84–87% lower API cost on two simple Android settings tasks.** Both approaches succeeded in all three trials per task. These are preliminary task-specific results, not a general success-rate or performance claim.
 
 ## What changes
 
 ```text
-User goal → OpenCode / GLM 5.3 Flash
+User goal → OpenCode / DeepSeek V4.1 Flash
             └─ mobile_jev_run
                 observe UI → build choices → Jev selects → execute → repeat
-            └─ GLM inspects the final screen and finishes incomplete work
+            └─ DeepSeek inspects the final screen and finishes incomplete work
 ```
 
 - Code turns the current Android accessibility tree into choices. A large model does not write questions on every step.
-- One Jev evaluation selects an operation and its target. Known input strings are passed directly; a GLM text helper is used only when needed.
+- One Jev evaluation selects an operation and its target. Known input strings are passed directly; a DeepSeek text helper is used only when needed.
 - Installed apps become dynamic choices in that same evaluation. Jev can launch an app, go Home, tap/long-press, type, swipe in four directions, go Back, press Enter or wait. The shared policy uses the goal, foreground app, controls and action outcomes; it contains no task-specific navigation routes.
 - Screen-change checks, step/time bounds, a per-device lock and no-progress detection limit each run.
 - Returns actions, the final UI, latency, tokens and known API cost. A model's `reported_complete` is **not** independent verification.
@@ -36,15 +36,17 @@ Same device and goal, three trials per task and approach. Times are medians over
 
 The initial 18-attempt comparison was **8/9 successful for the baseline, 6/9 for Jev**. A shorter failed run is not a speed win.
 
-After an action-history fix, pure Jev still failed all three search follow-ups. The current hybrid approach supplies literal input text and lets GLM verify and recover: **3/3 search follow-ups succeeded**, with **49.41 s median** and **$0.003142 mean API cost**. These were separate follow-ups, not a new paired comparison, and are not pooled with earlier versions.
+After an action-history fix, pure Jev still failed all three search follow-ups. The historical hybrid experiment supplied literal input text and let GLM verify and recover: **3/3 search follow-ups succeeded**, with **49.41 s median** and **$0.003142 mean API cost**. These were separate follow-ups, not a new paired comparison, and are not pooled with earlier versions.
 
 [Detailed results and limitations (Chinese)](RESULTS.md) · [Methodology and sanitized per-run measurements](benchmarks/README.md)
+
+Current-version smoke check: Jev + DeepSeek V4.1 Flash reached visible Skyscanner flight results for Shanghai (Any)–Tokyo (Any), October 20–25, 2026, one adult in economy. The route, dates and cabin were checked against the final screen. Starting from the open homepage with Shanghai already selected, the run took **76.40 s**, **22 actions**, and **$0.012903** in reported API cost, including correcting a date selection. It used an Android 15/API 35 emulator with software rendering and live screenshots. This is one functional check, not a paired speed/cost benchmark; earlier failed attempts are not included in that single-run timing.
 
 ## Try it
 
 The reference runner and benchmark were validated on **Windows + Android 15/API 35**. The Jev integration targets Android; other platforms are inherited from upstream and were not tested with Jev.
 
-Requirements: Node.js 22.12+ (tested: 24.19), an online Android test emulator/device, Android SDK platform tools, and a Vercel AI Gateway key with access to `typesafe-ai/jev` and `zai/glm-5.3-flash`.
+Requirements: Node.js 22.12+ (tested: 24.19), an online Android test emulator/device, Android SDK platform tools, and a Vercel AI Gateway key with access to `typesafe-ai/jev` and `deepseek/deepseek-v4.1-flash`.
 
 ```powershell
 git clone https://github.com/Olorinm/mobile-mcp-jev.git
@@ -64,13 +66,19 @@ For another MCP client, launch `node /absolute/path/to/checkout/scripts/start-mc
 
 ## Visual inspector
 
+For Android Chrome pages whose controls remain stale after the screen changes, a local MobileCLI cache-refresh patch and an on-device regression check are provided in [patches/mobilecli](patches/mobilecli/README.md). Select the rebuilt dependency with `MOBILECLI_PATH`; the default npm binary is unchanged.
+
 After configuring `.env` and building, run `npm run inspector` (or `Try-Inspector.cmd` on Windows), then open **http://127.0.0.1:4781/**.
 
 The local English/Chinese panel shows the phone screenshot, next action and execution log. Use **Review step** to inspect a decision before executing it, or run automatically and pause before the next action. Probabilities, token usage and device options expand on demand. Stop cancels subsequent work; a device command already sent may still finish.
 
 Leave the optional app package empty to start from the current screen and let Jev choose an installed app. Application choices appear under **Target app**. The current navigation policy differs from the versions used in the historical benchmark table; those measurements have not been rerun for this update.
 
-This panel runs Jev directly, with GLM only for input text when needed. It does **not** include the outer OpenCode/GLM verification and recovery loop. Screenshots stay in session memory; task and UI text go to the model provider. Do not drive the same device from another MCP client during inspection. Screenshot capture and manual pauses add to elapsed time, so inspector timings are not comparable with the headless benchmark above.
+This panel runs Jev directly, with DeepSeek only for input text when needed. It does **not** include the outer OpenCode/DeepSeek verification and recovery loop. Screenshots refresh independently, one asynchronous capture at a time, with a 500 ms interval between captures. Decisions and actions never wait for a frame; the final frame may arrive after completion. Control overlays appear in manual review or a static preview, where they can be associated with an observation. Screenshots stay in session memory; task and UI text go to the model provider. Do not drive the same device from another MCP client during inspection. Manual pauses and shared device/network load still affect timings; the historical headless benchmark is not a matched comparison with this version.
+
+When Android Chrome returns an empty web-content tree, the Android adapter reads the visible tab's accessibility tree through its local ADB/DevTools socket. It excludes hidden, covered and offscreen controls and rechecks web targets before acting. This fallback requires local ADB and Chrome's debugging socket; it does not cover every third-party WebView. An unavailable web tree stops the task instead of handing Jev an address-bar-only observation.
+
+The DeepSeek V4.1 Flash text helper returns a validated `write_text` tool argument with reasoning requested off (`reasoning: "none"`). Analysis prose is never used as input text. Metrics record returned reasoning parts and reported reasoning tokens. Repeated state/action pairs are removed from Jev's offered choices to interrupt short navigation loops.
 
 ## Reproduce
 
