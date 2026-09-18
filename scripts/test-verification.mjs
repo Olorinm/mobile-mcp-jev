@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {searchWasExecuted} from './benchmark-verification.mjs';
+const event=(tool,output,input={})=>({type:'tool_use',part:{tool,state:{status:'completed',output,input}}});
+assert.equal(searchWasExecuted('baseline',[event('mobile_mobile_batch_commands','Unknown tool in step 1: mobile_mobile_type_keys')]),false);
+assert.equal(searchWasExecuted('baseline',[event('mobile_mobile_batch_commands','Step 1 (mobile_type_keys): Typed text: Battery saver\n')]),true);
+assert.equal(searchWasExecuted('baseline',[event('mobile_mobile_type_keys','Typed text: Battery saver',{text:'Battery saver'})]),true);
+assert.equal(searchWasExecuted('jev',[],{trace:[{outcome:'discarded_stale_screen',action:{operation:'TYPE',text:'Battery saver'}}]}),false);
+assert.equal(searchWasExecuted('jev',[],{trace:[{outcome:'executed',action:{operation:'TYPE',text:'Battery saver'}}]}),true);
+assert.equal(searchWasExecuted('hybrid',[],{trace:[{outcome:'executed',action:{operation:'TYPE',text:'Battery saver'}}]}),true);
+assert.equal(searchWasExecuted('hybrid',[event('mobile_mobile_type_keys','Typed text: Battery saver',{text:'Battery saver'})],{trace:[]}),true);
+assert.equal(searchWasExecuted('hybrid',[],{trace:[{outcome:'discarded_stale_screen',action:{operation:'TYPE',text:'Battery saver'}}]}),false);
+console.log('Eight verification regression checks passed');

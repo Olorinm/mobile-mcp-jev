@@ -1,0 +1,394 @@
+{
+  "schemaVersion": 1,
+  "phase": "initial-paired",
+  "date": "2026-09-18",
+  "environment": "Windows; Android 15/API 35 emulator; 720x1280",
+  "versions": {
+    "opencode": "1.18.31",
+    "aiSdk": "7.0.105",
+    "baselineModel": "zai/glm-5.3-flash",
+    "evaluator": "typesafe-ai/jev",
+    "upstream": "63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11"
+  },
+  "note": "Allowlisted per-run measurements only. Raw logs, UI text, screenshots, IDs, absolute paths and credentials are excluded. Missing usage is not zero.",
+  "runs": [
+    {
+      "task": "dark-theme",
+      "mode": "baseline",
+      "repetition": 1,
+      "success": true,
+      "elapsedMs": 38163.2098,
+      "knownCostUsd": 0.00558276,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 12,
+        "inputTokens": 20192,
+        "outputTokens": 475,
+        "reasoningTokens": 287,
+        "cacheReadTokens": 72432,
+        "costUsd": 0.00558276
+      },
+      "inner": null
+    },
+    {
+      "task": "dark-theme",
+      "mode": "jev",
+      "repetition": 1,
+      "success": true,
+      "elapsedMs": 20881.792200000004,
+      "knownCostUsd": 0.000867282,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2585,
+        "outputTokens": 169,
+        "reasoningTokens": 26,
+        "cacheReadTokens": 0,
+        "costUsd": 0.00048525
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 9096,
+        "outputTokens": 908,
+        "knownCostUsd": 0.000382032,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "screen-timeout",
+      "mode": "baseline",
+      "repetition": 1,
+      "success": true,
+      "elapsedMs": 37673.72940000001,
+      "knownCostUsd": 0.00782181,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 12,
+        "inputTokens": 38667,
+        "outputTokens": 500,
+        "reasoningTokens": 244,
+        "cacheReadTokens": 54992,
+        "costUsd": 0.00782181
+      },
+      "inner": null
+    },
+    {
+      "task": "screen-timeout",
+      "mode": "jev",
+      "repetition": 1,
+      "success": true,
+      "elapsedMs": 23215.844200000007,
+      "knownCostUsd": 0.00093845,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2576,
+        "outputTokens": 194,
+        "reasoningTokens": 173,
+        "cacheReadTokens": 0,
+        "costUsd": 0.0005699
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 8775,
+        "outputTokens": 903,
+        "knownCostUsd": 0.00036855,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "dark-theme",
+      "mode": "jev",
+      "repetition": 2,
+      "success": true,
+      "elapsedMs": 43147.318899999984,
+      "knownCostUsd": 0.000913538,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2650,
+        "outputTokens": 170,
+        "reasoningTokens": 107,
+        "cacheReadTokens": 0,
+        "costUsd": 0.000536
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 8989,
+        "outputTokens": 900,
+        "knownCostUsd": 0.000377538,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "settings-search",
+      "mode": "baseline",
+      "repetition": 1,
+      "success": false,
+      "elapsedMs": 180382.3577,
+      "knownCostUsd": 0.00260794,
+      "accountingComplete": false,
+      "outer": {
+        "calls": 6,
+        "inputTokens": 11462,
+        "outputTokens": 343,
+        "reasoningTokens": 490,
+        "cacheReadTokens": 15738,
+        "costUsd": 0.00260794
+      },
+      "inner": null
+    },
+    {
+      "task": "settings-search",
+      "mode": "jev",
+      "repetition": 1,
+      "success": false,
+      "elapsedMs": 50759.037699999986,
+      "knownCostUsd": 0.0007794019999999999,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2285,
+        "outputTokens": 206,
+        "reasoningTokens": 117,
+        "cacheReadTokens": 0,
+        "costUsd": 0.0005042499999999999
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 5898,
+        "outputTokens": 725,
+        "knownCostUsd": 0.00027515199999999997,
+        "status": "no_progress"
+      }
+    },
+    {
+      "task": "dark-theme",
+      "mode": "baseline",
+      "repetition": 2,
+      "success": true,
+      "elapsedMs": 104278.3781,
+      "knownCostUsd": 0.00557282,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 12,
+        "inputTokens": 20120,
+        "outputTokens": 472,
+        "reasoningTokens": 270,
+        "cacheReadTokens": 72794,
+        "costUsd": 0.00557282
+      },
+      "inner": null
+    },
+    {
+      "task": "screen-timeout",
+      "mode": "jev",
+      "repetition": 2,
+      "success": true,
+      "elapsedMs": 21592.631200000003,
+      "knownCostUsd": 0.0008722000000000001,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2461,
+        "outputTokens": 173,
+        "reasoningTokens": 96,
+        "cacheReadTokens": 0,
+        "costUsd": 0.00050365
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 8775,
+        "outputTokens": 903,
+        "knownCostUsd": 0.00036855,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "screen-timeout",
+      "mode": "baseline",
+      "repetition": 2,
+      "success": true,
+      "elapsedMs": 40158.39140000002,
+      "knownCostUsd": 0.00713372,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 12,
+        "inputTokens": 33260,
+        "outputTokens": 461,
+        "reasoningTokens": 263,
+        "cacheReadTokens": 59424,
+        "costUsd": 0.00713372
+      },
+      "inner": null
+    },
+    {
+      "task": "settings-search",
+      "mode": "jev",
+      "repetition": 2,
+      "success": false,
+      "elapsedMs": 22472.748300000036,
+      "knownCostUsd": 0.000878902,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2316,
+        "outputTokens": 218,
+        "reasoningTokens": 133,
+        "cacheReadTokens": 0,
+        "costUsd": 0.0005229
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 5897,
+        "outputTokens": 887,
+        "knownCostUsd": 0.00035600199999999996,
+        "status": "no_progress"
+      }
+    },
+    {
+      "task": "settings-search",
+      "mode": "baseline",
+      "repetition": 2,
+      "success": true,
+      "elapsedMs": 69440.93470000004,
+      "knownCostUsd": 0.005591270000000001,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 11,
+        "inputTokens": 24335,
+        "outputTokens": 595,
+        "reasoningTokens": 456,
+        "cacheReadTokens": 47184,
+        "costUsd": 0.005591270000000001
+      },
+      "inner": null
+    },
+    {
+      "task": "dark-theme",
+      "mode": "baseline",
+      "repetition": 3,
+      "success": true,
+      "elapsedMs": 75072.94239999994,
+      "knownCostUsd": 0.00594041,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 12,
+        "inputTokens": 23288,
+        "outputTokens": 445,
+        "reasoningTokens": 288,
+        "cacheReadTokens": 69357,
+        "costUsd": 0.00594041
+      },
+      "inner": null
+    },
+    {
+      "task": "dark-theme",
+      "mode": "jev",
+      "repetition": 3,
+      "success": true,
+      "elapsedMs": 29915.0284999999,
+      "knownCostUsd": 0.000901204,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2636,
+        "outputTokens": 173,
+        "reasoningTokens": 69,
+        "cacheReadTokens": 0,
+        "costUsd": 0.0005164
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 9162,
+        "outputTokens": 908,
+        "knownCostUsd": 0.000384804,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "screen-timeout",
+      "mode": "baseline",
+      "repetition": 3,
+      "success": true,
+      "elapsedMs": 89439.81130000006,
+      "knownCostUsd": 0.0063557299999999995,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 14,
+        "inputTokens": 19580,
+        "outputTokens": 590,
+        "reasoningTokens": 179,
+        "cacheReadTokens": 101141,
+        "costUsd": 0.0063557299999999995
+      },
+      "inner": null
+    },
+    {
+      "task": "screen-timeout",
+      "mode": "jev",
+      "repetition": 3,
+      "success": true,
+      "elapsedMs": 21789.825199999963,
+      "knownCostUsd": 0.0009307860000000001,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2571,
+        "outputTokens": 221,
+        "reasoningTokens": 121,
+        "cacheReadTokens": 0,
+        "costUsd": 0.00055665
+      },
+      "inner": {
+        "calls": 6,
+        "inputTokens": 8908,
+        "outputTokens": 895,
+        "knownCostUsd": 0.000374136,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "settings-search",
+      "mode": "baseline",
+      "repetition": 3,
+      "success": true,
+      "elapsedMs": 57829.52709999995,
+      "knownCostUsd": 0.00594045,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 10,
+        "inputTokens": 28779,
+        "outputTokens": 530,
+        "reasoningTokens": 529,
+        "cacheReadTokens": 36470,
+        "costUsd": 0.00594045
+      },
+      "inner": null
+    },
+    {
+      "task": "settings-search",
+      "mode": "jev",
+      "repetition": 3,
+      "success": false,
+      "elapsedMs": 19645.217500000028,
+      "knownCostUsd": 0.0006369839999999999,
+      "accountingComplete": false,
+      "outer": {
+        "calls": 2,
+        "inputTokens": 2028,
+        "outputTokens": 272,
+        "reasoningTokens": 196,
+        "cacheReadTokens": 0,
+        "costUsd": 0.0005382
+      },
+      "inner": {
+        "calls": 3,
+        "inputTokens": 2352,
+        "outputTokens": 288,
+        "knownCostUsd": 0.00009878400000000001,
+        "status": "error"
+      }
+    }
+  ]
+}

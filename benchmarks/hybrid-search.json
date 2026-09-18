@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "phase": "hybrid-search",
+  "date": "2026-09-18",
+  "environment": "Windows; Android 15/API 35 emulator; 720x1280",
+  "versions": {
+    "opencode": "1.18.31",
+    "aiSdk": "7.0.105",
+    "baselineModel": "zai/glm-5.3-flash",
+    "evaluator": "typesafe-ai/jev",
+    "upstream": "63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11"
+  },
+  "note": "Allowlisted per-run measurements only. Raw logs, UI text, screenshots, IDs, absolute paths and credentials are excluded. Missing usage is not zero.",
+  "runs": [
+    {
+      "task": "settings-search",
+      "mode": "hybrid",
+      "repetition": 1,
+      "success": true,
+      "elapsedMs": 49412.6528,
+      "knownCostUsd": 0.00346693,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 6,
+        "inputTokens": 14111,
+        "outputTokens": 489,
+        "reasoningTokens": 779,
+        "cacheReadTokens": 14825,
+        "costUsd": 0.0031954
+      },
+      "inner": {
+        "calls": 5,
+        "inputTokens": 6465,
+        "outputTokens": 804,
+        "knownCostUsd": 0.00027152999999999997,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "settings-search",
+      "mode": "hybrid",
+      "repetition": 2,
+      "success": true,
+      "elapsedMs": 111233.39229999999,
+      "knownCostUsd": 0.00343909,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 6,
+        "inputTokens": 11448,
+        "outputTokens": 508,
+        "reasoningTokens": 1258,
+        "cacheReadTokens": 18786,
+        "costUsd": 0.00316378
+      },
+      "inner": {
+        "calls": 5,
+        "inputTokens": 6555,
+        "outputTokens": 804,
+        "knownCostUsd": 0.00027530999999999996,
+        "status": "reported_complete"
+      }
+    },
+    {
+      "task": "settings-search",
+      "mode": "hybrid",
+      "repetition": 3,
+      "success": true,
+      "elapsedMs": 47553.335900000005,
+      "knownCostUsd": 0.00251963,
+      "accountingComplete": true,
+      "outer": {
+        "calls": 6,
+        "inputTokens": 7940,
+        "outputTokens": 453,
+        "reasoningTokens": 463,
+        "cacheReadTokens": 19970,
+        "costUsd": 0.0022481000000000003
+      },
+      "inner": {
+        "calls": 5,
+        "inputTokens": 6465,
+        "outputTokens": 804,
+        "knownCostUsd": 0.00027152999999999997,
+        "status": "reported_complete"
+      }
+    }
+  ]
+}

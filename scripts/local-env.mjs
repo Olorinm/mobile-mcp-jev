@@ -1,0 +1,11 @@
+import { existsSync } from 'node:fs';
+import { dirname, resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+export const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+if (existsSync(join(root,'.env'))) process.loadEnvFile(join(root,'.env'));
+if (!process.env.ANDROID_HOME) throw new Error('Set ANDROID_HOME in .env or the process environment.');
+process.env.ANDROID_SDK_ROOT ||= process.env.ANDROID_HOME;
+process.env.PATH = join(process.env.ANDROID_HOME,'platform-tools') + (process.platform === 'win32' ? ';' : ':') + process.env.PATH;
+process.env.MOBILEMCP_DISABLE_TELEMETRY = '1';
+export const device = process.env.MOBILE_DEVICE;
+if (!device) throw new Error('Set MOBILE_DEVICE to the Android device ID returned by mobilecli devices.');

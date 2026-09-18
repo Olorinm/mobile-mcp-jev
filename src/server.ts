@@ -1,3 +1,4 @@
+// Modified by mobile-mcp-jev: add opt-in Jev execution and device locking.
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import fs from "node:fs";
@@ -17,6 +18,7 @@ import { Mobilecli } from "./mobilecli";
 import { MobileDevice } from "./mobile-device";
 import { validateOutputPath, validateFileExtension } from "./utils";
 import { formatElements } from "./format-elements";
+import { activeJevDevices, runJev } from "./jev";
 
 type ScreenshotContent = { type: "text", text: string } | { type: "image", data: string, mimeType: string };
 
@@ -96,6 +98,9 @@ export const createMcpServer = (): McpServer => {
 		}, (async (args: any, _extra: any) => {
 			scarf();
 			try {
+				if (args.device && activeJevDevices.has(args.device)) {
+					throw new Error("Device is busy with a Jev run; wait for it to finish");
+				}
 				trace(`Invoking ${name} with args: ${JSON.stringify(args)}`);
 				const start = +new Date();
 				const telemetry: Record<string, string | number> = {};
@@ -261,6 +266,22 @@ export const createMcpServer = (): McpServer => {
 
 		throw new ActionableError(`Device "${deviceId}" not found. Use the mobile_list_available_devices tool to see available devices.`);
 	};
+
+	if (process.env.MOBILEMCP_ENABLE_JEV === "1") {
+		server.registerTool("mobile_jev_run", {
+			title: "Run Android task with Jev",
+			description: "Execute a short authorized task on the current Android screen using Jev decisions. Open the starting app first. Sends UI text and goal to Vercel AI Gateway. Supports taps, input, swipes, back and Enter. Returns status, final UI, actions, tokens, elapsed time and API cost. reported_complete is a model claim, not independently verified success. Do not run other tools on this device concurrently.",
+			inputSchema: { device: z.string(), goal: z.string().min(1).max(4000), maxSteps: z.number().int().min(1).max(40).default(16), timeoutMs: z.number().int().min(1000).max(300000).default(120000), texts: z.array(z.string().min(1).max(2000)).max(20).optional() },
+			annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+		}, async (args, extra) => {
+			const device = mobilecli.getDevices({ platform: "android" }).data.devices.find(d => d.id === args.device && d.state === "online");
+			if (!device) { return { isError: true, content: [{ type: "text", text: "An online Android device is required" }] }; }
+			const result = await runJev(getRobotFromDevice(args.device), { ...args, signal: extra.signal });
+			// Full detailed traces can be saved by the benchmark client. The host only
+			// needs a compact summary to avoid paying to re-read every intermediate UI.
+			return { content: [{ type: "text", text: JSON.stringify({ ...result, trace: result.trace.map(({ screen, probabilities, ...step }) => step) }) }] };
+		});
+	}
 
 	tool(
 		"mobile_list_available_devices",

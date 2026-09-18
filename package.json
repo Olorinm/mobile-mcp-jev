@@ -1,31 +1,36 @@
 {
-  "name": "@mobilenext/mobile-mcp",
-  "mcpName": "io.github.mobile-next/mobile-mcp",
+  "name": "@olorinm/mobile-mcp-jev",
+  "mcpName": "io.github.Olorinm/mobile-mcp-jev",
   "version": "0.0.1",
-  "description": "Mobile MCP",
+  "description": "Experimental Mobile MCP fork with Jev Android execution and GLM verification",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mobile-next/mobile-mcp.git"
+    "url": "git+https://github.com/Olorinm/mobile-mcp-jev.git"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12"
   },
   "license": "Apache-2.0",
   "scripts": {
-    "build": "tsc && chmod +x lib/index.js",
+    "build": "tsc && node -e \"require('fs').chmodSync('lib/index.js', 0o755)\"",
     "start": "node lib/index.js",
     "lint": "eslint .",
     "fixlint": "eslint . --fix",
     "test": "c8 playwright test",
+    "test:jev": "playwright test jev.test.ts mobile-device.test.ts format-elements.test.ts server-annotations.test.ts server-batch.test.ts",
+    "jev": "node scripts/jev-run.mjs",
+    "benchmark:jev": "node scripts/benchmark.mjs",
     "watch": "tsc --watch",
     "clean": "rm -rf lib",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:verification": "node scripts/test-verification.mjs"
   },
   "files": [
     "lib"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
+    "ai": "7.0.105",
     "ajv": "^8.18.0",
     "commander": "14.0.0",
     "express": "5.1.0",
@@ -63,7 +68,9 @@
   },
   "author": "",
   "bugs": {
-    "url": "https://github.com/mobile-next/mobile-mcp/issues"
+    "url": "https://github.com/Olorinm/mobile-mcp-jev/issues"
   },
-  "homepage": "https://github.com/mobile-next/mobile-mcp#readme"
+  "homepage": "https://github.com/Olorinm/mobile-mcp-jev#readme",
+  "private": true,
+  "x-fork-notice": "Modified from mobile-next/mobile-mcp for the optional Jev executor; see NOTICE."
 }

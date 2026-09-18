@@ -1,3 +1,4 @@
+// Modified by mobile-mcp-jev: preserve Android UI attributes for Jev decisions.
 import { Mobilecli } from "./mobilecli";
 import { ActionableError, Button, InstalledApp, Orientation, Robot, ScreenElement, ScreenSize, ScreenshotOptions, SwipeDirection } from "./robot";
 
@@ -101,7 +102,46 @@ const flattenUIElement = (element: UIElementResponse): ScreenElement[] => {
 	return [screenElement, ...element.children.flatMap(child => flattenUIElement(child))];
 };
 
+interface AndroidNode {
+	class: string;
+	text?: string;
+	hint?: string;
+	"content-desc"?: string;
+	"resource-id"?: string;
+	enabled?: boolean;
+	checked?: boolean;
+	checkable?: boolean;
+	clickable?: boolean;
+	visible?: boolean;
+	selected?: boolean;
+	rect: ScreenElement["rect"];
+	children?: AndroidNode[];
+}
+
+export function flattenAndroidHierarchy(nodes: AndroidNode[]): ScreenElement[] {
+	const result: ScreenElement[] = [];
+	const labels = (node: AndroidNode): string[] => node.visible === false ? [] :
+		[node.text, node["content-desc"], node.hint, ...(node.children ?? []).flatMap(labels)].filter((s): s is string => Boolean(s));
+	const visit = (node: AndroidNode, insideClickable = false) => {
+		if (node.visible === false || node.rect.width <= 0 || node.rect.height <= 0 || node["resource-id"]?.startsWith("com.android.systemui:")) { return; }
+		const label = node.clickable ? [...new Set(labels(node))].join(" | ") : [node.text, node["content-desc"], node.hint].filter(Boolean).join(" | ");
+		if (node.clickable || /EditText/.test(node.class) || (label && !insideClickable)) {
+			result.push({ type: node.class, label, identifier: node["resource-id"], rect: node.rect, enabled: node.enabled,
+				clickable: node.clickable === true, checked: node.checkable ? node.checked : undefined, selected: node.selected || undefined });
+		}
+		for (const child of node.children ?? []) { visit(child, insideClickable || node.clickable === true); }
+	};
+	for (const node of nodes) { visit(node); }
+	return result;
+}
+
 export class MobileDevice implements Robot {
+	public async getDetailedElementsOnScreen(): Promise<ScreenElement[]> {
+		const response = this.runJsonCommand<{ data: { rawData: string } }>(["dump", "ui", "--format", "raw"]);
+		const raw = JSON.parse(response.data.rawData);
+		if (!Array.isArray(raw.hierarchy)) { throw new Error("Detailed UI requires Android hierarchy"); }
+		return flattenAndroidHierarchy(raw.hierarchy);
+	}
 
 	private mobilecli: Mobilecli;
 

@@ -1,3 +1,5 @@
+> Upstream documentation retained for attribution. For this experimental Jev fork, use [README.md](README.md). Upstream installation commands do not install this fork.
+
 # Mobile Next - モバイル開発・自動化のための MCP サーバー | iOS、Android、シミュレーター、エミュレーター、実機
 
 [English](README.md) | **日本語** | [简体中文](README.zh-CN.md)

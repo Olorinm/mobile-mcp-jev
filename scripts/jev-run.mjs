@@ -1,0 +1,14 @@
+import './local-env.mjs';
+import { device, root } from './local-env.mjs';
+import { MobileDevice } from '../lib/mobile-device.js';
+import { runJev } from '../lib/jev.js';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+const robot = new MobileDevice(device);
+const goal = process.argv.slice(2).join(' ') || 'Open Display settings and enable Dark theme.';
+await robot.launchApp('com.android.settings');
+const result = await runJev(robot,{ device, goal, maxSteps:16 });
+mkdirSync(join(root,'benchmark-results'),{recursive:true});
+const path = join(root,'benchmark-results',`jev-pilot-${Date.now()}.json`);
+writeFileSync(path,JSON.stringify(result,null,2));
+console.log(JSON.stringify({status:result.status,elapsedMs:result.elapsedMs,timing:result.timing,usage:result.usage,actions:result.trace.map(x=>({action:x.action,outcome:x.outcome})),path}));

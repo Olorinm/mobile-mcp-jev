@@ -1,3 +1,4 @@
+# Modified by mobile-mcp-jev: exclude local configuration and raw experiment data.
 **/.DS_Store
 node_modules
 lib
@@ -5,3 +6,12 @@ lib
 coverage
 test-results
 playwright-report
+.env
+.env.*
+!.env.example
+.local/
+benchmark-results/
+*.log
+*.pem
+*.key
+.local-notes/

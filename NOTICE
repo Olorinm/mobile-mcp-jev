@@ -1,0 +1,14 @@
+Mobile MCP + Jev
+
+This experimental fork is based on mobile-next/mobile-mcp, licensed under
+the Apache License, Version 2.0. Original attribution and license notices
+are retained. This fork is not an official Mobile Next product.
+
+Upstream: https://github.com/mobile-next/mobile-mcp
+Base revision: 63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11
+
+Modifications in this fork add optional Jev Android execution, richer Android
+observations, OpenCode/GLM runners, benchmark verification, privacy-preserving
+measurement exports, documentation, and a fork-specific CI workflow.
+
+The integration design was inspired by browser-use/jev-ultrafast.

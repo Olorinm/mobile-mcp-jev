@@ -1,3 +1,4 @@
+// Modified by mobile-mcp-jev: add optional detailed Android observations.
 export interface Dimensions {
 	width: number;
 	height: number;
@@ -40,6 +41,7 @@ export interface ScreenElement {
 	selected?: boolean;
 	checked?: boolean;
 	enabled?: boolean;
+	clickable?: boolean;
 }
 
 export class ActionableError extends Error {
@@ -59,6 +61,7 @@ export interface ScreenshotOptions {
 }
 
 export interface Robot {
+	getDetailedElementsOnScreen?(): Promise<ScreenElement[]>;
 	/**
 	 * Get the screen size of the device in pixels.
 	 */

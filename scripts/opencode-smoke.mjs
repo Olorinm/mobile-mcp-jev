@@ -1,0 +1,12 @@
+import { root } from './local-env.mjs';
+import { config, opencode } from './opencode-config.mjs';
+import { spawn } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+const cwd = join(root,'.local/opencode-work'); mkdirSync(cwd,{recursive:true});
+const c=config('baseline'); c.mcp={};
+const child=spawn(opencode,['run','--print-logs','--log-level','DEBUG','--format','json','--agent','mobile','Reply with OK. Do not call tools.'],{cwd,windowsHide:true,env:{...process.env,OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER:'1',OPENCODE_DISABLE_MODELS_FETCH:'1',OPENCODE_DISABLE_DEFAULT_PLUGINS:'1',OPENCODE_CONFIG_CONTENT:JSON.stringify(c)}});
+const timer=setTimeout(()=>child.kill(),60000);child.on('close',()=>clearTimeout(timer));
+child.stdin.end();
+let data='';child.stdout.on('data',d=>{data+=d;process.stdout.write(d)});child.stderr.on('data',d=>process.stderr.write(d));
+child.on('close',code=>{writeFileSync(join(root,'.local/opencode-smoke.jsonl'),data);process.exitCode=code??1;});
