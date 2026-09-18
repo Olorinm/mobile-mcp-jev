@@ -61,6 +61,14 @@ node scripts/opencode-run.mjs baseline "Enable Dark theme in Android Display set
 
 接入其他 MCP 客户端时，启动 `node /absolute/path/to/checkout/scripts/start-mcp.mjs`，将示例路径替换为自己的 checkout 路径。`MOBILE_DEVICE` 应填写 `mobilecli devices` 返回的 ID，它可能与 `adb devices` 的序列号不同。详见 [使用说明](README-JEV.md)。
 
+## 可视化调试
+
+配置 `.env` 并构建后，运行 `npm run inspector`（Windows 也可双击 `Try-Inspector.cmd`），打开 **http://127.0.0.1:4781/**。
+
+本地面板支持中英文，显示手机截图、下一步动作和执行记录。点击**查看下一步**，检查后再单步执行；也可自动运行，在下一步操作前暂停。概率、Token 用量和设备参数按需展开。停止会取消后续工作，已经发送给设备的命令仍可能执行完成。
+
+面板直接运行 Jev，仅在需要生成输入文字时调用 GLM，**不包含**外层 OpenCode / GLM 的验收和接管。截图只保留在会话内存中，任务和界面文字会发送给模型提供方。调试时不要让另一个 MCP 客户端同时操作该设备。截图和人工暂停会增加耗时，不能与上方无界面基准直接比较。
+
 ## 复现测试
 
 ```powershell

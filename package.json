@@ -19,6 +19,7 @@
     "test": "c8 playwright test",
     "test:jev": "playwright test jev.test.ts mobile-device.test.ts format-elements.test.ts server-annotations.test.ts server-batch.test.ts",
     "jev": "node scripts/jev-run.mjs",
+    "inspector": "node scripts/inspector.mjs",
     "benchmark:jev": "node scripts/benchmark.mjs",
     "watch": "tsc --watch",
     "clean": "rm -rf lib",

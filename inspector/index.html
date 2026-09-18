@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev Inspector · Mobile MCP</title>
+<link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script>
+</head>
+<body>
+<header><a href="/" class="brand">Mobile MCP <span>/ Jev</span></a><div class="header-actions"><span id="connection" role="status"></span><button id="language" type="button">简体中文</button></div></header>
+<main>
+<div id="notice" role="alert" hidden></div>
+<form id="task-form">
+  <div class="task-row"><label class="sr-only" for="goal" data-i18n="goal"></label><textarea id="goal" rows="2" maxlength="4000" required>Open Display settings and enable Dark theme.</textarea><button id="start-review" class="primary" type="submit" data-i18n="review"></button><button id="start-auto" type="button" data-i18n="runAuto"></button></div>
+  <details class="settings"><summary data-i18n="options"></summary><div class="settings-grid">
+    <div><label for="device" data-i18n="device"></label><div class="device-row"><select id="device" required><option value="">—</option></select><button id="reload-devices" type="button" aria-label="Refresh device list">↻</button></div></div>
+    <div><label for="app" data-i18n="app"></label><input id="app" value="com.android.settings" spellcheck="false" autocomplete="off"></div>
+    <div><label for="texts" data-i18n="texts"></label><textarea id="texts" rows="2" maxlength="10000" placeholder="Battery saver"></textarea></div>
+    <div class="limits"><div><label for="max-steps" data-i18n="maxSteps"></label><input id="max-steps" type="number" min="1" max="40" value="16" required></div><div><label for="timeout" data-i18n="timeout"></label><input id="timeout" type="number" min="1" max="300" value="300" required></div></div>
+  </div></details>
+</form>
+<div class="status-line"><strong id="status" role="status">—</strong><span><b id="count">0</b> <span data-i18n="executed"></span></span><span id="elapsed">—</span><span id="cost">—</span></div>
+<div class="workspace">
+  <section class="screen-panel" aria-labelledby="screen-title">
+    <div class="panel-heading"><h2 id="screen-title" data-i18n="screenTitle"></h2><div><label class="checkbox-label"><input type="checkbox" id="show-elements"><span data-i18n="showElements"></span></label><button id="preview" type="button" data-i18n="preview"></button></div></div>
+    <div class="screen-stage"><div id="empty-screen"><p data-i18n="noScreen"></p><p data-i18n="noScreenHint"></p></div><div id="phone" hidden><img id="screen-image" alt="Android device screenshot"><div id="overlays" class="hide-boxes"></div></div></div>
+    <div class="screen-caption"><span id="screen-caption" data-i18n="snapshotHint"></span><span id="frame-time">—</span></div>
+  </section>
+  <section class="decision-panel" aria-labelledby="decision-title">
+    <h2 id="decision-title" data-i18n="decisionTitle"></h2><div id="decision-summary"></div>
+    <div class="execution-controls"><button id="step" class="primary" type="button" data-i18n="step" disabled></button><button id="toggle-run" type="button" data-i18n="resume" disabled></button><button id="stop" type="button" data-i18n="stop" disabled></button></div>
+    <details class="decision-details"><summary data-i18n="probability"></summary><section class="prob-section"><h3 data-i18n="operations"></h3><div id="operations"></div></section><section id="target-section" class="prob-section" hidden><h3 data-i18n="targets"></h3><div id="targets"></div></section></details>
+    <details class="usage-details"><summary data-i18n="tokens"></summary><p id="tokens">—</p><div id="call-note"></div><p class="muted" data-i18n="modeNote"></p></details>
+    <div class="log-heading"><h2 id="timeline-title" data-i18n="timelineTitle"></h2></div><div id="timeline"></div>
+  </section>
+</div>
+</main>
+</body>
+</html>

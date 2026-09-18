@@ -61,6 +61,14 @@ node scripts/opencode-run.mjs baseline "Enable Dark theme in Android Display set
 
 For another MCP client, launch `node /absolute/path/to/checkout/scripts/start-mcp.mjs`. Set `MOBILE_DEVICE` to the ID from `mobilecli devices`; it may differ from the serial in `adb devices`. See [setup details (Chinese)](README-JEV.md).
 
+## Visual inspector
+
+After configuring `.env` and building, run `npm run inspector` (or `Try-Inspector.cmd` on Windows), then open **http://127.0.0.1:4781/**.
+
+The local English/Chinese panel shows the phone screenshot, next action and execution log. Use **Review step** to inspect a decision before executing it, or run automatically and pause before the next action. Probabilities, token usage and device options expand on demand. Stop cancels subsequent work; a device command already sent may still finish.
+
+This panel runs Jev directly, with GLM only for input text when needed. It does **not** include the outer OpenCode/GLM verification and recovery loop. Screenshots stay in session memory; task and UI text go to the model provider. Do not drive the same device from another MCP client during inspection. Screenshot capture and manual pauses add to elapsed time, so inspector timings are not comparable with the headless benchmark above.
+
 ## Reproduce
 
 ```powershell
