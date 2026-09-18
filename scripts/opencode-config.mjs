@@ -1,7 +1,7 @@
 import { root } from './local-env.mjs';
 import { join } from 'node:path';
 export const opencode = process.env.OPENCODE_BIN || join(root,'.local/opencode/node_modules/opencode-windows-x64/bin/opencode.exe');
-const originalTools = ['mobile_list_elements_on_screen','mobile_click_on_screen_at_coordinates','mobile_swipe_on_screen','mobile_type_keys','mobile_press_button','mobile_launch_app','mobile_get_foreground_app','mobile_batch_commands'];
+const originalTools = ['mobile_list_elements_on_screen','mobile_click_on_screen_at_coordinates','mobile_swipe_on_screen','mobile_type_keys','mobile_press_button','mobile_list_apps','mobile_launch_app','mobile_get_foreground_app','mobile_batch_commands'];
 export function config(mode) {
   const allowed = mode === 'jev' ? ['mobile_jev_run'] : mode==='hybrid' ? [...originalTools,'mobile_jev_run'] : originalTools;
   return {

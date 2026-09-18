@@ -6,7 +6,6 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 const robot = new MobileDevice(device);
 const goal = process.argv.slice(2).join(' ') || 'Open Display settings and enable Dark theme.';
-await robot.launchApp('com.android.settings');
 const result = await runJev(robot,{ device, goal, maxSteps:16 });
 mkdirSync(join(root,'benchmark-results'),{recursive:true});
 const path = join(root,'benchmark-results',`jev-pilot-${Date.now()}.json`);

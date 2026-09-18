@@ -19,6 +19,7 @@ User goal → OpenCode / GLM 5.3 Flash
 
 - Code turns the current Android accessibility tree into choices. A large model does not write questions on every step.
 - One Jev evaluation selects an operation and its target. Known input strings are passed directly; a GLM text helper is used only when needed.
+- Installed apps become dynamic choices in that same evaluation. Jev can launch an app, go Home, tap/long-press, type, swipe in four directions, go Back, press Enter or wait. The shared policy uses the goal, foreground app, controls and action outcomes; it contains no task-specific navigation routes.
 - Screen-change checks, step/time bounds, a per-device lock and no-progress detection limit each run.
 - Returns actions, the final UI, latency, tokens and known API cost. A model's `reported_complete` is **not** independent verification.
 - Opt-in: ordinary Mobile MCP behavior remains available without `MOBILEMCP_ENABLE_JEV=1`.
@@ -67,6 +68,8 @@ After configuring `.env` and building, run `npm run inspector` (or `Try-Inspecto
 
 The local English/Chinese panel shows the phone screenshot, next action and execution log. Use **Review step** to inspect a decision before executing it, or run automatically and pause before the next action. Probabilities, token usage and device options expand on demand. Stop cancels subsequent work; a device command already sent may still finish.
 
+Leave the optional app package empty to start from the current screen and let Jev choose an installed app. Application choices appear under **Target app**. The current navigation policy differs from the versions used in the historical benchmark table; those measurements have not been rerun for this update.
+
 This panel runs Jev directly, with GLM only for input text when needed. It does **not** include the outer OpenCode/GLM verification and recovery loop. Screenshots stay in session memory; task and UI text go to the model provider. Do not drive the same device from another MCP client during inspection. Screenshot capture and manual pauses add to elapsed time, so inspector timings are not comparable with the headless benchmark above.
 
 ## Reproduce
@@ -95,7 +98,7 @@ node scripts/test-verification.mjs
 
 This is an early experiment for short, structured tasks. It does not add vision for canvas/custom controls. Input appends text; reliable clearing/editing and long workflows are not implemented. The reference benchmark uses English Android settings.
 
-Task goals and screen text are sent to Vercel/model providers. Local run logs may include screen text and inputs. Keep credentials in ignored `.env`; raw logs and screenshots are excluded from this repository. Public benchmark files contain only allowlisted numeric results and task/status labels.
+Task goals, screen text, installed app names/packages and the foreground app are sent to Vercel/model providers. Local run logs may include screen text and inputs. Keep credentials in ignored `.env`; raw logs and screenshots are excluded from this repository. Public benchmark files contain only allowlisted numeric results and task/status labels.
 
 ## Attribution and license
 

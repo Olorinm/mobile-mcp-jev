@@ -64,7 +64,7 @@ export class InspectorSession extends EventEmitter {
 			this.state.result = await this.runner(robot, { ...task, signal, debug: {
 				onUpdate: async progress => {
 					this.state.progress = structuredClone(progress);
-					if (["observed", "decision", "finished"].includes(progress.phase)) { await this.capture(robot, progress.screen); }
+					if (["observed", "decision", "executed", "finished"].includes(progress.phase)) { await this.capture(robot, progress.screen); }
 					this.publish();
 				},
 				beforeAction: async (progress, actionSignal) => {

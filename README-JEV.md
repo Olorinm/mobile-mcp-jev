@@ -28,7 +28,7 @@ node scripts/opencode-run.mjs baseline "Enable Dark theme in Android Display set
 
 客户端 command 为 Node 可执行文件，args 为 checkout 内 `scripts/start-mcp.mjs` 的绝对路径。该入口读取项目 `.env` 并启用 `mobile_jev_run`。原版入口 `lib/index.js` 只有设置 `MOBILEMCP_ENABLE_JEV=1` 时才注册新工具。
 
-参数：`device`、`goal`；可选 `maxSteps`（默认 16，最大 40）、`timeoutMs`（默认 120000）、`texts`（用户明确提供的输入字符串）。先由主 Agent 打开起始应用，再把短任务交给 Jev。Jev 在云端推理，循环和手机连接在电脑上运行。
+参数：`device`、`goal`；可选 `maxSteps`（默认 16，最大 40）、`timeoutMs`（默认 120000）、`texts`（用户明确提供的输入字符串）。可直接从当前界面交给 Jev，它会读取已安装应用并选择需要打开的应用。Jev 在云端推理，循环和手机连接在电脑上运行。
 
 主 Agent 应核对返回的 `finalScreen`。`reported_complete` 只是 Jev 的判断，不等于核验成功。Jev 的 `e1` 编号仅在内部快照有效；接管时重新用原版读屏工具获取其控件编号。
 
@@ -40,7 +40,7 @@ node scripts/opencode-run.mjs baseline "Enable Dark theme in Android Display set
 4. 点击前重新观察；页面变化就丢弃旧决定。只有已执行动作进入下一轮记忆。
 5. 限制步数、运行时间及连续无进展次数。执行记录与模型用量随结果返回。
 
-支持点击、输入、上下滑动、返回、Enter 和等待。没有新增视觉能力、长按、拖动和复杂文本编辑。输入目前追加文字，不适合要求可靠清空旧值的任务。
+支持启动已安装应用、回桌面、点击、长按（500 毫秒）、输入、四向滑动、返回、Enter 和等待。应用列表在每次运行开始时读取，启动前再次检查目标仍存在；发现失败时不提供启动选项，结果中的 `appInventory` 标为 `unavailable`，仍可通过界面导航。通用规则位于 `src/jev-policy.ts`，没有为某个应用或测试任务指定路线。每步记录前台应用和画面是否变化，完成判断也会重新检查界面。没有新增视觉能力、拖动和复杂文本编辑。输入目前追加文字，不适合要求可靠清空旧值的任务。
 
 ## 测试及复现
 
@@ -61,6 +61,6 @@ npm run benchmark:jev
 
 `npm test` 运行上游和新增测试；设备测试需要对应硬件环境。原始日志、屏幕和截图只保存在本地被忽略的目录，公开的 [benchmarks](benchmarks/README.md) 仅含经过白名单导出的测量数据。
 
-任务目标和屏幕文字会发送给 Vercel / 模型提供方。密钥通过环境变量读取，不应放进提示词、提交记录或公开日志。
+任务目标、屏幕文字、已安装应用名称和包名、前台应用会发送给 Vercel / 模型提供方。密钥通过环境变量读取，不应放进提示词、提交记录或公开日志。
 
 参考：[Vercel evaluation API](https://vercel.com/docs/ai-gateway/modalities/evaluation)、[Jev Ultrafast](https://github.com/browser-use/jev-ultrafast)。许可证为 [Apache-2.0](LICENSE)。

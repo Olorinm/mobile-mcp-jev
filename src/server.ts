@@ -270,7 +270,7 @@ export const createMcpServer = (): McpServer => {
 	if (process.env.MOBILEMCP_ENABLE_JEV === "1") {
 		server.registerTool("mobile_jev_run", {
 			title: "Run Android task with Jev",
-			description: "Execute a short authorized task on the current Android screen using Jev decisions. Open the starting app first. Sends UI text and goal to Vercel AI Gateway. Supports taps, input, swipes, back and Enter. Returns status, final UI, actions, tokens, elapsed time and API cost. reported_complete is a model claim, not independently verified success. Do not run other tools on this device concurrently.",
+			description: "Execute a short authorized Android task using Jev decisions. Discovers installed apps and can switch between them without a preselected starting app. Sends app names/packages, foreground app, UI text and goal to Vercel AI Gateway. Supports app launch, Home, taps, long press, input, four-way swipes, Back and Enter. Returns status, final UI/foreground app, actions, tokens, elapsed time and API cost. reported_complete is a model claim, not independently verified success. Do not run other tools on this device concurrently.",
 			inputSchema: { device: z.string(), goal: z.string().min(1).max(4000), maxSteps: z.number().int().min(1).max(40).default(16), timeoutMs: z.number().int().min(1000).max(300000).default(120000), texts: z.array(z.string().min(1).max(2000)).max(20).optional() },
 			annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
 		}, async (args, extra) => {
@@ -279,7 +279,7 @@ export const createMcpServer = (): McpServer => {
 			const result = await runJev(getRobotFromDevice(args.device), { ...args, signal: extra.signal });
 			// Full detailed traces can be saved by the benchmark client. The host only
 			// needs a compact summary to avoid paying to re-read every intermediate UI.
-			return { content: [{ type: "text", text: JSON.stringify({ ...result, trace: result.trace.map(({ screen, probabilities, ...step }) => step) }) }] };
+			return { content: [{ type: "text", text: JSON.stringify({ ...result, trace: result.trace.map(({ screen, probabilities, apps, ...step }) => step) }) }] };
 		});
 	}
 

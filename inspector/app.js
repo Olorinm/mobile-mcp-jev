@@ -28,6 +28,7 @@ const copy = {
     "operations": "Action",
     "probability": "Choice probabilities",
     "targets": "Target control",
+    "appTargets": "Target app",
     "timelineTitle": "Actions",
     "timelineHint": "Only “Executed” actions changed the device.",
     "connected": "Connected",
@@ -54,7 +55,7 @@ const copy = {
     "blocked": "Blocked",
     "step_limit": "Decision limit reached",
     "cancelled_or_timeout": "Stopped or timed out",
-    "no_progress": "No progress",
+    "no_progress": "Incomplete · no progress",
     "unstable_screen": "Screen kept changing",
     "noProb": "Choices will appear after a model response.",
     "noLog": "No actions yet.",
@@ -63,6 +64,7 @@ const copy = {
     "not_executed": "Not executed",
     "attempted": "Attempted · check device",
     "discarded_stale_screen": "Discarded · screen changed",
+    "discarded_unavailable_app": "Discarded · app unavailable",
     "claimed": "Claimed complete",
     "input": "Input",
     "calls": "model calls",
@@ -80,6 +82,11 @@ const copy = {
     "noneDevices": "No online Android devices",
     "snapshotAt": "",
     "TAP": "Tap",
+    "LONG_PRESS": "Long press",
+    "HOME": "Home",
+    "LAUNCH_APP": "Open app",
+    "SWIPE_LEFT": "Swipe left",
+    "SWIPE_RIGHT": "Swipe right",
     "TYPE": "Type text",
     "SWIPE_UP": "Swipe up",
     "SWIPE_DOWN": "Swipe down",
@@ -118,6 +125,7 @@ const copy = {
     "operations": "动作",
     "probability": "候选概率",
     "targets": "目标控件",
+    "appTargets": "目标应用",
     "timelineTitle": "动作记录",
     "timelineHint": "只有“已执行”才表示动作确实已发出。",
     "connected": "已连接",
@@ -144,7 +152,7 @@ const copy = {
     "blocked": "无法继续",
     "step_limit": "已达到决策次数上限",
     "cancelled_or_timeout": "已停止或超时",
-    "no_progress": "没有进展",
+    "no_progress": "任务未完成 · 没有进展",
     "unstable_screen": "界面持续变化",
     "noProb": "模型返回后，这里会显示候选选项。",
     "noLog": "暂无动作。",
@@ -153,6 +161,7 @@ const copy = {
     "not_executed": "未执行",
     "attempted": "已尝试 · 请检查手机",
     "discarded_stale_screen": "已丢弃 · 界面变化",
+    "discarded_unavailable_app": "已丢弃 · 应用不可用",
     "claimed": "声称完成",
     "input": "输入",
     "calls": "次模型调用",
@@ -170,6 +179,11 @@ const copy = {
     "noneDevices": "没有在线 Android 设备",
     "snapshotAt": "",
     "TAP": "点击",
+    "LONG_PRESS": "长按",
+    "HOME": "回桌面",
+    "LAUNCH_APP": "打开应用",
+    "SWIPE_LEFT": "向左滑动",
+    "SWIPE_RIGHT": "向右滑动",
     "TYPE": "输入文字",
     "SWIPE_UP": "向上滑动",
     "SWIPE_DOWN": "向下滑动",
@@ -215,6 +229,7 @@ function localize() {
   $('language').textContent=language==='en'?'简体中文':'English';
   $('reload-devices').setAttribute('aria-label',language==='zh'?'刷新设备列表':'Refresh device list');
   $('screen-image').alt=language==='zh'?'Android 手机截图':'Android device screenshot';
+  $('goal').placeholder=t('goal');
   if(!$('device').value&&$('device').options.length===1)$('device').options[0].textContent=t('noneDevices');
 }
 function renderControls() {
@@ -264,9 +279,10 @@ function render() {
   }else{summary.append(node('div','decision-kicker',t(active()?'thinking':'readyDecision')),node('strong','',t(active()?phase||state.status:'emptyDecision')),node('p','',t('emptyDecisionHint')));}
   const answers=last?.probabilities;
   probabilities($('operations'),answers?.operation,id=>t(id));
-  const kind=last?.action.operation==='TAP'?'tap_target':last?.action.operation==='TYPE'?'type_target':null;
+  const kind=({TAP:'tap_target',TYPE:'type_target',LONG_PRESS:'long_press_target',LAUNCH_APP:'app_target'})[last?.action.operation];
   $('target-section').hidden=!kind;
-  if(kind)probabilities($('targets'),answers?.[kind],id=>`${id} · ${last.screen.elements.find(e=>e.id===id)?.label||id}`);
+  $('target-heading').textContent=t(kind==='app_target'?'appTargets':'targets');
+  if(kind)probabilities($('targets'),answers?.[kind],id=>kind==='app_target'?last.apps?.find(a=>a.id===id)?.appName||id:`${id} · ${last.screen.elements.find(e=>e.id===id)?.label||id}`);
   else{$('targets').replaceChildren();}
   const frame=state.frame;
   $('phone').hidden=!frame;$('empty-screen').hidden=!!frame;
