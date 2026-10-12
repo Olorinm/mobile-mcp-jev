@@ -55,6 +55,8 @@ export class ActionableError extends Error {
 
 export type Orientation = "portrait" | "landscape";
 
+export type FoldPosture = "folded" | "half-open" | "open";
+
 export interface ScreenshotOptions {
 	signal?: AbortSignal;
 	format?: "png" | "jpeg";
@@ -107,6 +109,12 @@ export interface Robot {
 	 * Remove the GPS location override. Optional, not all robots support it.
 	 */
 	clearLocation?(): Promise<void>;
+
+	/**
+	 * Set the hinge of a foldable device, either to a named posture or to an
+	 * angle in degrees (0-180). Optional, not all robots support it.
+	 */
+	fold?(posture: FoldPosture | number): Promise<void>;
 
 	/**
 	 * Read the device clipboard. Optional, not all robots support it.
@@ -171,12 +179,16 @@ export interface Robot {
 	 */
 	tapByRef?(ref: string): Promise<void>;
 	typeByRef?(ref: string, text: string): Promise<void>;
-	longPressByRef?(ref: string, duration: number): Promise<void>;
 
 	/**
 	 * Tap on a specific coordinate on the screen.
 	 */
 	doubleTap(x: number, y: number): Promise<void>;
+
+	/**
+	 * Double tap on the center of an element by its ref from the latest getElementsOnScreen (e.g. "@e5"). mobilecli only.
+	 */
+	doubleTapByRef?(ref: string): Promise<void>;
 
 	/**
 	 * Long press on a specific coordinate on the screen.
@@ -185,6 +197,11 @@ export interface Robot {
 	 * @param duration - Duration of the long press in milliseconds
 	 */
 	longPress(x: number, y: number, duration: number): Promise<void>;
+
+	/**
+	 * Long press on the center of an element by its ref from the latest getElementsOnScreen (e.g. "@e5"). mobilecli only.
+	 */
+	longPressByRef?(ref: string, duration: number): Promise<void>;
 
 	/**
 	 * Get all elements on the screen. Works only on native apps (not webviews). Will

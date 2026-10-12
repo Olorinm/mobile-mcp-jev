@@ -1,5 +1,11 @@
 # Android MobileCLI patches
 
+These are **legacy patches**. The current lockfile installs upstream **MobileCLI 1.0.19**, whose Android reader clears its accessibility cache and whose `runAdbShell` quotes app launch arguments. No custom build is required for these two fixes. Remove an old `MOBILECLI_PATH` override and restart the inspector/MCP process to use the npm binary. The Chrome DevTools fallback in this fork remains separate.
+
+Validation on October 12, 2026, with the unmodified npm 1.0.19 binary on Android 15 / API 35: Settings and YouTube launched successfully, and the existing UI-freshness fixture passed all three rounds on the first read (97–103 ms after the tap). These are local dependency checks, not new Jev/model performance benchmarks.
+
+MobileCLI 1.0.19 is [FSL-1.1-ALv2](https://github.com/mobile-next/mobilecli/blob/1.0.19/LICENSE). The historical 1.0.9 source and patches described below retain their Apache-2.0 licensing. Keep the old build instructions only for reproducing historical results.
+
 These downstream patches target **mobilecli 1.0.9**, commit `583fdc752a3c410f1b63ecc7cfbe93135c45ee9a`.
 
 ## App launch arguments

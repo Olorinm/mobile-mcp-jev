@@ -33,6 +33,15 @@ Run it against devices on your own machine, or against real iOS and Android devi
   </a>
 </h4>
 
+<p align="center">
+ <a href="https://www.star-history.com/?repos=mobile-next%2Fmobile-mcp">
+  <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/badge?repo=mobile-next/mobile-mcp&type=trending&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/badge?repo=mobile-next/mobile-mcp&type=trending" />
+   <img alt="GitHub Trending Repository of the Day" src="https://api.star-history.com/badge?repo=mobile-next/mobile-mcp&type=trending" />
+  </picture>
+ </a>
+</p>
 
 https://github.com/user-attachments/assets/bb084777-beb3-4930-ae6f-8d3fe694ddde
 
@@ -60,6 +69,11 @@ How we help to scale mobile automation:
 - 🧠 **No platform expertise required**: no XCUITest, no Espresso, no per-platform glue — describe the goal and the agent does it.
 - 🧰 **Full device control**: taps, swipes, and gestures; app install/launch/terminate; screen recording; hardware buttons; deep links; orientation.
 - 📊 **Structured, deterministic output**: reads real UI elements and extracts structured data, cutting the ambiguity of screenshot-only approaches.
+- 🪞 **Device mirroring in Claude Code**: for Claude Code running in Ghostty or kitty. Install the plugin and run `/mobile-mirror` to see the device's live screen in a side pane, then tap, type and press Home/Back without leaving the terminal.
+
+<p align="center">
+    <img alt="/mobile-mirror showing an iOS simulator beside a Claude Code session" src="docs/screenshots/mobile-mirror.png" width="800" />
+</p>
 
 ### 🎯 Platform Support
 
@@ -77,6 +91,7 @@ How we help to scale mobile automation:
 - **`mobile_get_screen_size`** - Get the screen size of the mobile device in pixels
 - **`mobile_get_orientation`** - Get the current screen orientation of the device
 - **`mobile_set_orientation`** - Change the screen orientation (portrait/landscape)
+- **`mobile_fold_device`** - Fold or unfold a foldable device (iPhone Duo simulators, foldable Android emulators)
 - **`mobile_set_location`** - Override the GPS location reported by the device, or clear the override
 - **`mobile_clipboard`** - Read or replace the device clipboard
 
@@ -92,15 +107,15 @@ How we help to scale mobile automation:
 - **`mobile_launch_app`** - Launch an app using its package name
 - **`mobile_terminate_app`** - Stop and terminate a running app
 - **`mobile_install_app`** - Install an app from file (.apk, .ipa, .app, .zip)
-- **`mobile_uninstall_app`** - Uninstall an app using bundle ID or package name
+- **`mobile_uninstall_app`** - Uninstall an app by its package name or bundle ID
 
 ### Screen Interaction
 - **`mobile_take_screenshot`** - Take a screenshot to understand what's on screen
 - **`mobile_save_screenshot`** - Save a screenshot to a file
 - **`mobile_list_elements_on_screen`** - List UI elements with their coordinates and properties
-- **`mobile_click_on_screen_at_coordinates`** - Click at specific x,y coordinates
-- **`mobile_double_tap_on_screen`** - Double-tap at specific coordinates
-- **`mobile_long_press_on_screen_at_coordinates`** - Long press at specific coordinates
+- **`mobile_click_on_screen_at_coordinates`** - Click at specific x,y coordinates or on an element by its ref
+- **`mobile_double_tap_on_screen`** - Double-tap at specific coordinates or on an element by its ref
+- **`mobile_long_press_on_screen_at_coordinates`** - Long press at specific coordinates or on an element by its ref
 - **`mobile_swipe_on_screen`** - Swipe in any direction (up, down, left, right)
 - **`mobile_start_screen_recording`** - Start recording the device screen to a video file
 - **`mobile_stop_screen_recording`** - Stop the active screen recording and save the video
@@ -108,7 +123,7 @@ How we help to scale mobile automation:
 ### Input & Navigation
 - **`mobile_type_keys`** - Type text into focused elements with optional submit
 - **`mobile_press_button`** - Press device buttons (HOME, BACK, VOLUME_UP/DOWN, ENTER, etc.)
-- **`mobile_open_url`** - Open URLs in the device browser
+- **`mobile_open_url`** - Open http/https URLs in the device browser
 
 ### Logs & Crash Reports
 - **`mobile_get_device_logs`** - Collect live device logs (logcat on Android, unified log on iOS), optionally saved to a file
@@ -210,7 +225,16 @@ To setup Cline, just add the json above to your MCP settings file.
 <details>
 <summary>Claude Code</summary>
 
-Use the Claude Code CLI to add the Mobile MCP server:
+Install the plugin from inside Claude Code. It adds the Mobile MCP server and `/mobile-mirror`:
+
+```
+/plugin marketplace add mobile-next/mobile-mcp
+/plugin install mobile-mcp@mobile-mcp
+```
+
+`/mobile-mirror [device-id]` opens a pane with the device's live screen. Click the picture to tap, type to send keys, and use the Home, Back, App Switch and URL buttons above it. The picture needs a terminal with the kitty graphics protocol, such as kitty or Ghostty.
+
+If you can't use plugins, add only the MCP server with the Claude Code CLI:
 
 ```bash
 claude mcp add mobile-mcp -- npx -y @mobilenext/mobile-mcp@latest
@@ -306,7 +330,7 @@ gemini mcp add mobile-mcp npx -y @mobilenext/mobile-mcp@latest
 
 #### Click the button to install:
 
-[![Install in Goose](https://block.github.io/goose/img/extension-install-dark.svg)](https://block.github.io/goose/extension?cmd=npx&arg=-y&arg=%40mobilenext%2Fmobile-mcp%40latest&id=mobile-mcp&name=Mobile%20MCP&description=Mobile%20automation%20and%20development%20for%20iOS%2C%20Android%2C%20simulators%2C%20emulators%2C%20and%20real%20devices)
+[![Install in Goose](https://goose-docs.ai/img/extension-install-dark.svg)](https://goose-docs.ai/extension?cmd=npx&arg=-y&arg=%40mobilenext%2Fmobile-mcp%40latest&id=mobile-mcp&name=Mobile%20MCP&description=Mobile%20automation%20and%20development%20for%20iOS%2C%20Android%2C%20simulators%2C%20emulators%2C%20and%20real%20devices)
 
 #### Or install manually:
 

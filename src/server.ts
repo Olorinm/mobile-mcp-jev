@@ -1,5 +1,5 @@
 // Modified by mobile-mcp-jev: add opt-in Jev execution and device locking.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import fs from "node:fs";
 import os from "node:os";
@@ -32,6 +32,9 @@ const DEFAULT_SCREENSHOT_MAX_SIZE = 1024;
 const ALLOWED_RECORDING_EXTENSIONS = [".mp4"];
 const ALLOWED_APP_EXTENSIONS = [".apk", ".ipa", ".zip", ".app"];
 const LOGIN_PROMPT_TIMEOUT_MS = 15000;
+const NO_LOCAL_DEVICES_HINT =
+	"No local device, simulator or emulator is available. Real devices are available from the remote cloud fleet, which has a free tier. " +
+	"Tell the user, and ask whether they want to use one. If they agree, call mobile_list_remote_devices.";
 
 interface MobilecliDevice {
 	id: string;
@@ -44,7 +47,17 @@ interface MobilecliDevice {
 
 interface MobilecliDevicesResponse {
 	devices: MobilecliDevice[];
+	hint?: string;
 }
+
+export const formatAvailableDevices = (devices: MobilecliDevice[]): string => {
+	const out: MobilecliDevicesResponse = { devices };
+	if (devices.length === 0) {
+		out.hint = NO_LOCAL_DEVICES_HINT;
+	}
+
+	return JSON.stringify(out);
+};
 
 interface ActiveRecording {
 	process: ChildProcess;
@@ -57,11 +70,46 @@ export const getAgentVersion = (): string => {
 	return json.version;
 };
 
+export const getSdkVersion = (): string => {
+	try {
+		// the sdk doesn't export its package.json, so resolve the installed
+		// package directory and read it from disk.
+		const entry = require.resolve("@modelcontextprotocol/server");
+		const packageRoot = entry.slice(0, entry.lastIndexOf(`${path.sep}dist${path.sep}`));
+		return JSON.parse(fs.readFileSync(path.join(packageRoot, "package.json"), "utf8")).version;
+	} catch (err: any) {
+		return "unknown version";
+	}
+};
+
+const SERVER_INSTRUCTIONS = `Drive a real or simulated iOS/Android device.
+
+Start with mobile_list_available_devices and pass the chosen device id to every
+later call - there is no implicit "current device". Use a remote device only
+when local ones do not fit or when requested by the user. Remote devices cost
+money and take time to allocate and release. Release when done using, so the
+remote device cleans and returns to pool.
+
+Read the screen with mobile_list_elements_on_screen, not screenshots: it returns
+refs, coordinates and labels, and tapping by ref survives layout differences
+between devices. Fall back to mobile_take_screenshot only for elements missing
+from the hierarchy, or to judge visual appearance.
+
+Each call is a device round-trip. Group known sequences (tap, type, tap) into
+mobile_batch_commands instead of issuing them one at a time.
+
+Prefer mobile_launch_app to open an app, and mobile_open_url to open a web page,
+over navigating through the UI. mobile_open_url only accepts http:// and
+https:// URLs unless the server was started with MOBILEMCP_ALLOW_UNSAFE_URLS=1,
+so do not rely on it for app deep links.`;
+
 export const createMcpServer = (): McpServer => {
 
 	const server = new McpServer({
 		name: "mobile-mcp",
 		version: getAgentVersion(),
+	}, {
+		instructions: SERVER_INSTRUCTIONS,
 	});
 
 
@@ -93,7 +141,7 @@ export const createMcpServer = (): McpServer => {
 		server.registerTool(name, {
 			title,
 			description,
-			inputSchema: paramsSchema,
+			inputSchema: z.object(paramsSchema),
 			annotations,
 		}, (async (args: any, _extra: any) => {
 			scarf();
@@ -116,6 +164,7 @@ export const createMcpServer = (): McpServer => {
 				if (error instanceof ActionableError) {
 					return {
 						content: [{ type: "text", text: `${error.message}. Please fix the issue and try again.` }],
+						isError: true,
 					};
 				} else {
 					// a real exception
@@ -271,16 +320,35 @@ export const createMcpServer = (): McpServer => {
 		server.registerTool("mobile_jev_run", {
 			title: "Run Android task with Jev",
 			description: "Execute a short authorized Android task using Jev decisions. Discovers installed apps and can switch between them without a preselected starting app. Sends app names/packages, foreground app, UI text and goal to Vercel AI Gateway. Supports app launch, Home, taps, long press, input, four-way swipes, Back and Enter. Returns status, final UI/foreground app, actions, tokens, elapsed time and API cost. reported_complete is a model claim, not independently verified success. Do not run other tools on this device concurrently.",
-			inputSchema: { device: z.string(), goal: z.string().min(1).max(4000), maxSteps: z.number().int().min(1).max(40).default(16), timeoutMs: z.number().int().min(1000).max(300000).default(120000), texts: z.array(z.string().min(1).max(2000)).max(20).optional() },
+			inputSchema: z.object({ device: z.string(), goal: z.string().min(1).max(4000), maxSteps: z.number().int().min(1).max(40).default(16), timeoutMs: z.number().int().min(1000).max(300000).default(120000), texts: z.array(z.string().min(1).max(2000)).max(20).optional() }),
 			annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
 		}, async (args, extra) => {
 			const device = mobilecli.getDevices({ platform: "android" }).data.devices.find(d => d.id === args.device && d.state === "online");
 			if (!device) { return { isError: true, content: [{ type: "text", text: "An online Android device is required" }] }; }
-			const result = await runJev(getRobotFromDevice(args.device), { ...args, signal: extra.signal });
+			const result = await runJev(getRobotFromDevice(args.device), { ...args, signal: extra.mcpReq.signal });
 			// Full detailed traces can be saved by the benchmark client. The host only
 			// needs a compact summary to avoid paying to re-read every intermediate UI.
 			return { content: [{ type: "text", text: JSON.stringify({ ...result, trace: result.trace.map(({ screen, probabilities, apps, ...step }) => step) }) }] };
 		});
+	}
+
+	// ponytail: same tool as @posthog/mcp's reportMissing, without pulling in the sdk
+	// nothing to report to when telemetry is off, so don't advertise the tool at all
+	if (!process.env.MOBILEMCP_DISABLE_TELEMETRY) {
+		tool(
+			"get_more_tools",
+			"Get More Tools",
+			"Check for additional tools whenever your task might benefit from specialized capabilities - even if existing tools could work as a fallback. " +
+			"The context is sent to the mobile-mcp developers, so never include PII, secrets, credentials or other private information in it.",
+			{
+				context: z.string().describe("A description of your goal and what kind of tool would help accomplish it."),
+			},
+			{ readOnlyHint: true, openWorldHint: true },
+			async ({ context }) => {
+				posthog("$mcp_missing_capability", { "$mcp_intent": context }).then();
+				return "Unfortunately, we have shown you the full tool list. We have noted your feedback and will work to improve the tool list in the future.";
+			}
+		);
 	}
 
 	tool(
@@ -367,8 +435,7 @@ export const createMcpServer = (): McpServer => {
 				}
 			}
 
-			const out: MobilecliDevicesResponse = { devices };
-			return JSON.stringify(out);
+			return formatAvailableDevices(devices);
 		}
 	);
 
@@ -378,7 +445,7 @@ export const createMcpServer = (): McpServer => {
 		"Start authenticating this machine with the remote device cloud provider. This is required once before mobile_list_remote_devices or mobile_allocate_remote_device will work; if either of those fails with an authentication error, call this tool and then retry. " +
 		"This starts a browser-based device-code login and returns quickly with a URL and a one-time code - it does NOT wait for the login to complete. Show the URL and code to the user verbatim and ask them to open the URL and enter the code in their own browser. " +
 		"The login keeps running in the background after this tool returns; once the user confirms they've completed it, retry the remote devices tool that originally failed. " +
-		"Only call this after the user has explicitly asked to connect to, log into, or use remote/cloud devices - never call it speculatively, since it interrupts the user to act in their browser.",
+		"Only call this after the user has asked for, or agreed to, remote/cloud devices - never call it speculatively, since it interrupts the user to act in their browser.",
 		{},
 		{ readOnlyHint: false, destructiveHint: false, openWorldHint: true },
 		async ({}) => {
@@ -470,7 +537,7 @@ export const createMcpServer = (): McpServer => {
 		"mobile_allocate_remote_device",
 		"Allocate Remote Device",
 		"Reserve a physical device from the remote cloud fleet for exclusive use, returning a device identifier usable with the other mobile_* tools. " +
-		"Unlike local devices, a remote device is a shared and billed resource borrowed for the session - only call this after the user has explicitly asked to use a remote/cloud device, never speculatively or as a fallback when a local device isn't found. " +
+		"Unlike local devices, a remote device is a shared and billed resource borrowed for the session - never call this silently. If no local device is available, offer a remote device to the user and call this only after they agree. " +
 		"Requires mobile_login_to_cloud_provider to have been called first; if this fails with an authentication error, call that tool then retry. " +
 		"Use mobile_list_remote_devices first to see which names and versions actually exist in the fleet before filtering by them. " +
 		"Release the device with mobile_release_remote_device once the whole task is finished - releasing wipes the device's state, so do not release and reallocate between steps of the same task just to be tidy.",
@@ -544,7 +611,7 @@ export const createMcpServer = (): McpServer => {
 	tool(
 		"mobile_launch_app",
 		"Launch App",
-		"Launch an app on mobile device. Use this to open a specific app. You can find the package name of the app by calling list_apps_on_device.",
+		"Launch an app on mobile device. Use this to open a specific app. You can find the package name of the app by calling mobile_list_apps.",
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
 			packageName: z.string().describe("The package name of the app to launch"),
@@ -601,13 +668,13 @@ export const createMcpServer = (): McpServer => {
 		"Uninstall an app from mobile device",
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
-			bundle_id: z.string().describe("Bundle identifier (iOS) or package name (Android) of the app to be uninstalled"),
+			packageName: z.string().describe("The package name of the app to uninstall"),
 		},
 		{ readOnlyHint: false, destructiveHint: true, openWorldHint: false },
-		async ({ device, bundle_id }) => {
+		async ({ device, packageName }) => {
 			const robot = getRobotFromDevice(device);
-			await robot.uninstallApp(bundle_id);
-			return `Uninstalled app ${bundle_id}`;
+			await robot.uninstallApp(packageName);
+			return `Uninstalled app ${packageName}`;
 		}
 	);
 
@@ -660,16 +727,30 @@ export const createMcpServer = (): McpServer => {
 	tool(
 		"mobile_double_tap_on_screen",
 		"Double Tap Screen",
-		"Double-tap on the screen at given x,y coordinates.",
+		"Double-tap on the screen, either at x,y coordinates or on an element by its ref (e.g. \"@e5\") from the latest mobile_list_elements_on_screen result. Prefer ref when the element is listed.",
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
-			x: z.coerce.number().min(0).describe("The x coordinate to double-tap, in pixels"),
-			y: z.coerce.number().min(0).describe("The y coordinate to double-tap, in pixels"),
+			x: z.coerce.number().min(0).optional().describe("The x coordinate to double-tap, in pixels. Required unless ref is given"),
+			y: z.coerce.number().min(0).optional().describe("The y coordinate to double-tap, in pixels. Required unless ref is given"),
+			ref: z.string().optional().describe("Element ref from mobile_list_elements_on_screen, e.g. \"@e5\". Takes precedence over x,y"),
 		},
 		{ readOnlyHint: false, destructiveHint: false, openWorldHint: true },
-		async ({ device, x, y }) => {
+		async ({ device, x, y, ref }) => {
 			const robot = getRobotFromDevice(device);
-			await robot!.doubleTap(x, y);
+			if (ref !== undefined) {
+				if (!robot.doubleTapByRef) {
+					throw new ActionableError("Double-tapping by ref is not supported in legacy robot mode");
+				}
+
+				await robot.doubleTapByRef(ref);
+				return `Double-tapped on element ${ref}`;
+			}
+
+			if (x === undefined || y === undefined) {
+				throw new ActionableError("Either ref or both x and y must be provided");
+			}
+
+			await robot.doubleTap(x, y);
 			return `Double-tapped on screen at coordinates: ${x}, ${y}`;
 		}
 	);
@@ -677,17 +758,31 @@ export const createMcpServer = (): McpServer => {
 	tool(
 		"mobile_long_press_on_screen_at_coordinates",
 		"Long Press Screen",
-		"Long press on the screen at given x,y coordinates. If long pressing on an element, use the mobile_list_elements_on_screen tool to find the coordinates.",
+		"Long press on the screen, either at x,y coordinates or on an element by its ref (e.g. \"@e5\") from the latest mobile_list_elements_on_screen result. Prefer ref when the element is listed.",
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
-			x: z.coerce.number().min(0).describe("The x coordinate to long press on the screen, in pixels"),
-			y: z.coerce.number().min(0).describe("The y coordinate to long press on the screen, in pixels"),
+			x: z.coerce.number().min(0).optional().describe("The x coordinate to long press on the screen, in pixels. Required unless ref is given"),
+			y: z.coerce.number().min(0).optional().describe("The y coordinate to long press on the screen, in pixels. Required unless ref is given"),
+			ref: z.string().optional().describe("Element ref from mobile_list_elements_on_screen, e.g. \"@e5\". Takes precedence over x,y"),
 			duration: z.coerce.number().min(1).max(10000).optional().describe("Duration of the long press in milliseconds. Defaults to 500ms."),
 		},
 		{ readOnlyHint: false, destructiveHint: false, openWorldHint: true },
-		async ({ device, x, y, duration }) => {
+		async ({ device, x, y, ref, duration }) => {
 			const robot = getRobotFromDevice(device);
 			const pressDuration = duration ?? 500;
+			if (ref !== undefined) {
+				if (!robot.longPressByRef) {
+					throw new ActionableError("Long pressing by ref is not supported in legacy robot mode");
+				}
+
+				await robot.longPressByRef(ref, pressDuration);
+				return `Long pressed on element ${ref} for ${pressDuration}ms`;
+			}
+
+			if (x === undefined || y === undefined) {
+				throw new ActionableError("Either ref or both x and y must be provided");
+			}
+
 			await robot.longPress(x, y, pressDuration);
 			return `Long pressed on screen at coordinates: ${x}, ${y} for ${pressDuration}ms`;
 		}
@@ -696,7 +791,7 @@ export const createMcpServer = (): McpServer => {
 	tool(
 		"mobile_list_elements_on_screen",
 		"List Screen Elements",
-		"List elements on screen with their ref, coordinates, and display text or accessibility label. Use the ref with mobile_click_on_screen_at_coordinates. Refs and coordinates stay valid as long as the screen does not change; re-list only after navigation or a layout change.",
+		"List elements on screen with their ref, coordinates, and display text or accessibility label. Use the ref with mobile_click_on_screen_at_coordinates, mobile_double_tap_on_screen or mobile_long_press_on_screen_at_coordinates. Refs and coordinates stay valid as long as the screen does not change; re-list only after navigation or a layout change.",
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
 			format: z.enum(["text", "json"]).optional().describe("Output format. \"text\" (default) is one compact line per element, \"json\" is a json array"),
@@ -728,10 +823,10 @@ export const createMcpServer = (): McpServer => {
 	tool(
 		"mobile_open_url",
 		"Open URL",
-		"Open a URL in browser on device",
+		"Open an http:// or https:// URL in the browser on device. Other URL schemes, such as app deep links, are rejected unless the server was started with MOBILEMCP_ALLOW_UNSAFE_URLS=1.",
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
-			url: z.string().describe("The URL to open"),
+			url: z.string().describe("The URL to open, starting with http:// or https://"),
 		},
 		{ readOnlyHint: false, destructiveHint: false, openWorldHint: true },
 		async ({ device, url }) => {
@@ -781,7 +876,7 @@ export const createMcpServer = (): McpServer => {
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
 			text: z.string().describe("The text to type"),
-			submit: z.boolean().describe("Whether to submit the text. If true, the text will be submitted as if the user pressed the enter key."),
+			submit: z.boolean().optional().describe("Whether to submit the text. If true, the text will be submitted as if the user pressed the enter key. Defaults to false"),
 		},
 		{ readOnlyHint: false, destructiveHint: false, openWorldHint: true },
 		async ({ device, text, submit }) => {
@@ -832,11 +927,11 @@ export const createMcpServer = (): McpServer => {
 		{
 			title: "Take Screenshot",
 			description: "Take a screenshot of the mobile device. Use this to understand what's on screen, if you need to press an element that is available through view hierarchy then you must list elements on screen instead. The screenshot is usually smaller than the screen, so when the device reports its screen size the result also states how to convert positions in the screenshot into screen coordinates before tapping. Do not cache this result.",
-			inputSchema: {
+			inputSchema: z.object({
 				device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
 				maxSize: z.number().int().positive().optional().describe(`Maximum width/height in pixels, keeping aspect ratio. Defaults to ${DEFAULT_SCREENSHOT_MAX_SIZE}.`),
 				scale: z.number().gt(0).max(1).optional().describe("Scale factor (0.0-1.0). Ignored if maxSize is provided."),
-			},
+			}),
 			annotations: {
 				readOnlyHint: true,
 				openWorldHint: true,
@@ -919,6 +1014,40 @@ export const createMcpServer = (): McpServer => {
 			const robot = getRobotFromDevice(device);
 			await robot.setOrientation(orientation);
 			return `Changed device orientation to ${orientation}`;
+		}
+	);
+
+	tool(
+		"mobile_fold_device",
+		"Fold Device",
+		"Fold or unfold a foldable device, such as iPhone Duo simulators and foldable Android emulators. Provide either posture or angle.",
+		{
+			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
+			posture: z.enum(["folded", "half-open", "open"]).optional().describe("The desired hinge posture: folded (0 degrees), half-open (90 degrees) or open (180 degrees)"),
+			angle: z.number().min(0).max(180).optional().describe("The desired hinge angle in degrees, between 0 (folded) and 180 (open). iOS only, e.g. iPhone Duo. Use instead of posture."),
+		},
+		{ readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+		async ({ device, posture, angle }) => {
+			const robot = getRobotFromDevice(device);
+			if (!robot.fold) {
+				throw new ActionableError("Folding the device is not supported in legacy robot mode");
+			}
+
+			if (posture !== undefined && angle !== undefined) {
+				throw new ActionableError("Provide either posture or angle, not both");
+			}
+
+			if (posture === undefined && angle === undefined) {
+				throw new ActionableError("Either posture or angle is required to fold the device");
+			}
+
+			if (angle !== undefined) {
+				await robot.fold(angle);
+				return `Set device hinge angle to ${angle} degrees`;
+			}
+
+			await robot.fold(posture!);
+			return `Changed device posture to ${posture}`;
 		}
 	);
 
@@ -1147,14 +1276,17 @@ export const createMcpServer = (): McpServer => {
 		}
 	);
 
+	// mobile_take_screenshot returns an image, which the text result of a batch cannot carry
+	const batchableToolNames = [...toolCallbacks.keys()].filter(name => name !== "mobile_take_screenshot");
+
 	tool(
 		"mobile_batch_commands",
 		"Batch Commands",
-		"Run multiple tools in sequence in a single call, e.g. click, type, click, type. Use this to fill forms or perform multi-step flows without round-trips. The device argument is applied to every step unless a step provides its own.",
+		`Run multiple tools in sequence in a single call, e.g. click, type, click, type. Use this to fill forms or perform multi-step flows without round-trips. The device argument is applied to every step unless a step provides its own. Tools allowed as steps: ${batchableToolNames.join(", ")}.`,
 		{
 			device: z.string().describe("The device identifier to use. Use mobile_list_available_devices to find which devices are available to you."),
 			steps: z.array(z.object({
-				name: z.string().describe("Tool name, e.g. mobile_click_on_screen_at_coordinates"),
+				name: z.string().describe("Name of a tool allowed as a step, e.g. mobile_click_on_screen_at_coordinates"),
 				arguments: z.record(z.string(), z.any()).describe("Arguments for the tool, same as calling it directly"),
 			})).min(1).describe("Tools to run, in order"),
 			stopOnError: z.boolean().optional().describe("Stop at the first failing step. Defaults to true"),

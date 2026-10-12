@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { EventEmitter } from "node:events";
 
 import { MobileDevice } from "../src/mobile-device";
+import { ActionableError } from "../src/robot";
 
 function createMockMobileDevice(mockResponse: string): { device: MobileDevice; calls: string[][] } {
 	const device = new MobileDevice("test-device");
@@ -35,6 +36,21 @@ test.describe("MobileDevice", () => {
 			expect(calls[0]).toEqual(["io", "longpress", "100,201", "--duration", "500", "--device", "test-device"]);
 		});
 
+		// mobilecli parses --duration as an integer and rejects "250.5"
+		test("longPress should round a fractional duration before calling mobilecli", async () => {
+			const { device, calls } = createMockMobileDevice("");
+			await device.longPress(100, 200, 250.5);
+
+			expect(calls[0]).toEqual(["io", "longpress", "100,200", "--duration", "251", "--device", "test-device"]);
+		});
+
+		test("longPressByRef should round a fractional duration before calling mobilecli", async () => {
+			const { device, calls } = createMockMobileDevice("");
+			await device.longPressByRef("@e5", 799.4);
+
+			expect(calls[0]).toEqual(["io", "longpress", "@e5", "--duration", "799", "--device", "test-device"]);
+		});
+
 		test("swipeFromCoordinate should round fractional coordinates before calling mobilecli", async () => {
 			const { device, calls } = createMockMobileDevice("");
 			await device.swipeFromCoordinate(100.5, 300.2, "up", 400);
@@ -58,6 +74,39 @@ test.describe("MobileDevice", () => {
 		});
 	});
 
+	test.describe("gestures by element ref", () => {
+
+		test("longPressByRef should pass the element ref to mobilecli io longpress", async () => {
+			const { device, calls } = createMockMobileDevice("");
+			await device.longPressByRef("@e5", 800);
+
+			expect(calls[0]).toEqual(["io", "longpress", "@e5", "--duration", "800", "--device", "test-device"]);
+		});
+
+		test("doubleTapByRef should resolve the ref once and tap the element center twice", async () => {
+			const dump = { status: "ok", data: { elements: [
+				{ ref: "@e1", type: "Button", label: "+", rect: { x: 100, y: 200, width: 40, height: 60 } },
+			] } };
+			const { device, calls } = createMockMobileDevice(JSON.stringify(dump));
+			await device.doubleTapByRef("@e1");
+
+			expect(calls).toEqual([
+				["dump", "ui", "--device", "test-device"],
+				["io", "tap", "120,230", "--device", "test-device"],
+				["io", "tap", "120,230", "--device", "test-device"],
+			]);
+		});
+
+		test("doubleTapByRef should raise an actionable error for a ref that is not on screen", async () => {
+			const { device, calls } = createMockMobileDevice(JSON.stringify({ status: "ok", data: { elements: [] } }));
+			const pending = device.doubleTapByRef("@e9");
+
+			await expect(pending).rejects.toThrow(ActionableError);
+			await expect(pending).rejects.toThrow(/@e9 was not found on the current screen/);
+			expect(calls).toEqual([["dump", "ui", "--device", "test-device"]]);
+		});
+	});
+
 	test.describe("element state", () => {
 
 		test("getElementsOnScreen should keep ref, selected, checked and enabled from dump ui", async () => {
@@ -73,6 +122,36 @@ test.describe("MobileDevice", () => {
 			expect(elements[0]).toMatchObject({ selected: true, checked: true, enabled: false });
 			expect(elements[1].selected).toBeUndefined();
 		});
+
+		test("getElementsOnScreen should return no elements for an empty hierarchy", async () => {
+			const { device } = createMockMobileDevice(JSON.stringify({ status: "ok", data: { elements: [] } }));
+			await expect(device.getElementsOnScreen()).resolves.toEqual([]);
+		});
+	});
+
+	test.describe("empty ui dump", () => {
+
+		// A sleeping or locked device makes mobilecli report success with an
+		// empty payload, which used to surface as a raw
+		// "Cannot read properties of undefined (reading 'flatMap')" TypeError.
+		test("getElementsOnScreen should raise an actionable error when dump ui returns no elements", async () => {
+			const { device, calls } = createMockMobileDevice(JSON.stringify({ status: "ok", data: {} }));
+			const pending = device.getElementsOnScreen();
+
+			await expect(pending).rejects.toThrow(ActionableError);
+			await expect(pending).rejects.toThrow(/screen is most likely off or locked/);
+			expect(calls[0]).toEqual(["dump", "ui", "--device", "test-device"]);
+		});
+
+		test("getElementsOnScreen should raise an actionable error when dump ui omits data entirely", async () => {
+			const { device } = createMockMobileDevice(JSON.stringify({ status: "ok" }));
+			await expect(device.getElementsOnScreen()).rejects.toThrow(/screen is most likely off or locked/);
+		});
+
+		test("getElementsOnScreen should raise an actionable error when dump ui data is null", async () => {
+			const { device } = createMockMobileDevice(JSON.stringify({ status: "ok", data: null }));
+			await expect(device.getElementsOnScreen()).rejects.toThrow(/screen is most likely off or locked/);
+		});
 	});
 
 	test.describe("foreground app", () => {
@@ -83,6 +162,23 @@ test.describe("MobileDevice", () => {
 
 			expect(calls[0]).toEqual(["apps", "foreground", "--device", "test-device"]);
 			expect(app).toEqual({ appName: "com.example.app", packageName: "com.example.app" });
+		});
+	});
+
+	test.describe("fold", () => {
+
+		test("fold should call mobilecli device fold with a named posture", async () => {
+			const { device, calls } = createMockMobileDevice(JSON.stringify({ status: "ok", data: {} }));
+			await device.fold("half-open");
+
+			expect(calls[0]).toEqual(["device", "fold", "half-open", "--device", "test-device"]);
+		});
+
+		test("fold should call mobilecli device fold with an angle in degrees", async () => {
+			const { device, calls } = createMockMobileDevice(JSON.stringify({ status: "ok", data: {} }));
+			await device.fold(120);
+
+			expect(calls[0]).toEqual(["device", "fold", "120", "--device", "test-device"]);
 		});
 	});
 

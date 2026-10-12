@@ -72,7 +72,7 @@ node scripts/opencode-run.mjs baseline "Enable Dark theme in Android Display set
 
 ## 可视化调试
 
-Android Chrome 出现“画面已更新、控件仍停在旧状态”时，可使用 [patches/mobilecli](patches/mobilecli/README.md) 中的缓存刷新补丁和设备回归测试。编译后通过 `MOBILECLI_PATH` 选择修补版；默认 npm 依赖仍是上游原版。
+当前依赖 MobileCLI 1.0.19，已包含上游的 Android 无障碍缓存刷新和应用启动参数转义修复。移除旧的 `MOBILECLI_PATH` 覆盖配置即可使用 npm 安装的新版二进制。早期 1.0.9 补丁与设备回归测试保留在 [patches/mobilecli](patches/mobilecli/README.md)。
 
 配置 `.env` 并构建后，运行 `npm run inspector`（Windows 也可双击 `Try-Inspector.cmd`），打开 **http://127.0.0.1:4781/**。
 
@@ -118,6 +118,8 @@ node scripts/test-verification.mjs
 
 ## 来源与许可证
 
-采用 [Apache-2.0](LICENSE)。基于 `mobile-next/mobile-mcp` 的 `63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11`，详见 [NOTICE](NOTICE)。设计受 [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) 启发。本项目是独立实验性 fork，不是 Mobile Next 官方产品。
+采用 [Apache-2.0](LICENSE)。2026 年 10 月 12 日同步上游 `mobile-next/mobile-mcp` 至 [e0c215b](https://github.com/mobile-next/mobile-mcp/commit/e0c215b287722209bf4357e75a76c3efe5605cfa)（1.0.10 更新日志），详见 [NOTICE](NOTICE)。本次引入 MCP SDK 2、mobilewright 0.0.65、协议发现与上游手势和设备修复，保留 Jev 执行器和调试面板。既有性能成绩测量于此次更新之前。
 
-上游原始英文 README 保留在 [README-UPSTREAM.md](README-UPSTREAM.md)。其中的软件包和注册表安装指令安装的是上游项目。此仓库的 CI 不会发布 npm 包。
+MobileCLI 1.0.19 依赖单独采用 [FSL-1.1-ALv2](https://github.com/mobile-next/mobilecli/blob/1.0.19/LICENSE)，本仓库的 Apache-2.0 不替代依赖自身的许可证。设计受 [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) 启发。本项目是独立实验性 fork，不是 Mobile Next 官方产品。
+
+上游英文 README 保留在 [README-UPSTREAM.md](README-UPSTREAM.md)。其中的软件包、注册表安装指令及继承的 Claude Code `/mobile-mirror` 插件使用上游 Mobile MCP，不包含 Jev；体验 Jev 请按本页安装。此仓库的 CI 不会发布 npm 包。

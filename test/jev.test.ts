@@ -2,8 +2,7 @@ import { test, expect } from "@playwright/test";
 import { snapshot, questionsFor, validChoice, runJev, activeJevDevices, decisionState } from "../src/jev";
 import { flattenAndroidHierarchy } from "../src/mobile-device";
 import { Robot } from "../src/robot";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { createMcpServer } from "../src/server";
 
 const rect = { x: 0, y: 200, width: 200, height: 60 };

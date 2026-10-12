@@ -72,7 +72,7 @@ For another MCP client, launch `node /absolute/path/to/checkout/scripts/start-mc
 
 ## Visual inspector
 
-For Android Chrome pages whose controls remain stale after the screen changes, a local MobileCLI cache-refresh patch and an on-device regression check are provided in [patches/mobilecli](patches/mobilecli/README.md). Select the rebuilt dependency with `MOBILECLI_PATH`; the default npm binary is unchanged.
+The current dependency is MobileCLI 1.0.19, which includes upstream fixes for Android accessibility-cache freshness and shell quoting when launching apps. Remove an old `MOBILECLI_PATH` override to use the installed npm binary. The earlier 1.0.9 patches and the on-device regression check are retained in [patches/mobilecli](patches/mobilecli/README.md).
 
 After configuring `.env` and building, run `npm run inspector` (or `Try-Inspector.cmd` on Windows), then open **http://127.0.0.1:4781/**.
 
@@ -118,6 +118,8 @@ Task goals, screen text, installed app names/packages and the foreground app are
 
 ## Attribution and license
 
-[Apache-2.0](LICENSE). Based on `mobile-next/mobile-mcp` at `63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11`; see [NOTICE](NOTICE). Inspired by [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast). Independent experimental fork; not an official Mobile Next product.
+[Apache-2.0](LICENSE). Synced with `mobile-next/mobile-mcp` through [e0c215b](https://github.com/mobile-next/mobile-mcp/commit/e0c215b287722209bf4357e75a76c3efe5605cfa) (1.0.10 changelog), on October 12, 2026; see [NOTICE](NOTICE). This update adopts MCP SDK 2, mobilewright 0.0.65, protocol discovery, and upstream gesture/device fixes while retaining the Jev executor and inspector. Existing benchmark numbers predate this update.
 
-The original README is retained as [README-UPSTREAM.md](README-UPSTREAM.md). Upstream registry/package instructions install the upstream project, not this fork. No npm release is published by this repository's CI.
+The MobileCLI 1.0.19 dependency has its own [FSL-1.1-ALv2 license](https://github.com/mobile-next/mobilecli/blob/1.0.19/LICENSE); the repository's Apache-2.0 license does not replace dependency licenses. Inspired by [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast). Independent experimental fork; not an official Mobile Next product.
+
+The upstream README is retained as [README-UPSTREAM.md](README-UPSTREAM.md). Its registry/package instructions and the inherited Claude Code `/mobile-mirror` plugin install upstream Mobile MCP, without Jev; use this fork's setup above for Jev. No npm release is published by this repository's CI.

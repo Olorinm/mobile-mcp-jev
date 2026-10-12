@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
-
+import { Client, InMemoryTransport, ToolAnnotations } from "@modelcontextprotocol/client";
 import { createMcpServer } from "../src/server";
 
 type ToolAnnotationMatrix = Record<string, ToolAnnotations>;
@@ -31,6 +28,7 @@ const expectedAnnotations: ToolAnnotationMatrix = {
 	mobile_save_screenshot: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
 	mobile_take_screenshot: { readOnlyHint: true, openWorldHint: true },
 	mobile_set_orientation: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+	mobile_fold_device: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
 	mobile_set_location: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
 	mobile_clipboard: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
 	mobile_get_device_logs: { readOnlyHint: true, openWorldHint: true },

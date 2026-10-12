@@ -1,7 +1,7 @@
 // Modified by mobile-mcp-jev: preserve Android UI attributes for Jev decisions.
 import { Mobilecli } from "./mobilecli";
 import { AndroidChrome } from "./android-chrome";
-import { ActionableError, Button, InstalledApp, Orientation, Robot, ScreenElement, ScreenSize, ScreenshotOptions, SwipeDirection } from "./robot";
+import { ActionableError, Button, FoldPosture, InstalledApp, Orientation, Robot, ScreenElement, ScreenSize, ScreenshotOptions, SwipeDirection } from "./robot";
 
 interface InstalledAppsResponse {
 	status: "ok",
@@ -54,8 +54,10 @@ interface UIElementResponse {
 
 interface DumpUIResponse {
 	status: "ok",
-	data: {
-		elements: UIElementResponse[];
+	// mobilecli answers "dump ui" with status "ok" but an empty payload when the
+	// device screen is off or locked, so neither level can be relied on.
+	data?: {
+		elements?: UIElementResponse[];
 	};
 }
 
@@ -348,7 +350,7 @@ export class MobileDevice implements Robot {
 
 	public async longPressByRef(ref: string, duration: number): Promise<void> {
 		if (ref.startsWith("cdp:")) { await this.chrome.activate(ref, undefined, duration); return; }
-		this.runCommand(["io", "longpress", ref, "--duration", `${duration}`]);
+		this.runCommand(["io", "longpress", ref, "--duration", `${Math.round(duration)}`]);
 	}
 
 	public async doubleTap(x: number, y: number): Promise<void> {
@@ -357,13 +359,32 @@ export class MobileDevice implements Robot {
 		await this.tap(x, y);
 	}
 
+	public async doubleTapByRef(ref: string): Promise<void> {
+		// resolve the ref once: two "io tap @ref" calls would each dump the ui again and miss the double-tap window
+		const elements = await this.getElementsOnScreen();
+		const element = elements.find(candidate => candidate.ref === ref);
+		if (!element) {
+			throw new ActionableError(`Element ${ref} was not found on the current screen. Call mobile_list_elements_on_screen again to get fresh refs`);
+		}
+
+		const { x, y, width, height } = element.rect;
+		await this.doubleTap(x + width / 2, y + height / 2);
+	}
+
 	public async longPress(x: number, y: number, duration: number): Promise<void> {
-		this.runCommand(["io", "longpress", `${Math.round(x)},${Math.round(y)}`, "--duration", `${duration}`]);
+		// mobilecli rejects fractional coordinates and durations, both are parsed as integers
+		this.runCommand(["io", "longpress", `${Math.round(x)},${Math.round(y)}`, "--duration", `${Math.round(duration)}`]);
 	}
 
 	public async getElementsOnScreen(): Promise<ScreenElement[]> {
 		const response = this.runJsonCommand<DumpUIResponse>(["dump", "ui"]);
-		return response.data.elements.flatMap(element => flattenUIElement(element));
+		const elements = response.data?.elements;
+
+		if (!elements) {
+			throw new ActionableError("No UI hierarchy was returned for this device - its screen is most likely off or locked. Wake it up (for example with mobile_press_button using HOME, or POWER when that is supported) and try again");
+		}
+
+		return elements.flatMap(element => flattenUIElement(element));
 	}
 
 	public async setOrientation(orientation: Orientation): Promise<void> {
@@ -373,6 +394,11 @@ export class MobileDevice implements Robot {
 	public async getOrientation(): Promise<Orientation> {
 		const response = this.runJsonCommand<OrientationResponse>(["device", "orientation", "get"]);
 		return response.data.orientation;
+	}
+
+	public async fold(posture: FoldPosture | number): Promise<void> {
+		// parse the response, older mobilecli versions print help and exit 0 on unknown commands
+		this.runJsonCommand<unknown>(["device", "fold", `${posture}`]);
 	}
 
 	public async setLocation(latitude: number, longitude: number): Promise<void> {
