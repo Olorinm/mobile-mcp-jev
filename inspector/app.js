@@ -43,6 +43,7 @@ const copy = {
     "finished": "Stopped",
     "error": "Could not continue",
     "deciding": "Jev is deciding",
+    "retrying": "Model unavailable · retrying",
     "writing": "Preparing input text",
     "acting": "Executing",
     "emptyDecision": "No decision yet",
@@ -140,6 +141,7 @@ const copy = {
     "finished": "已停止",
     "error": "未能继续",
     "deciding": "Jev 正在判断",
+    "retrying": "模型暂不可用，正在重试",
     "writing": "正在准备输入文字",
     "acting": "正在执行",
     "emptyDecision": "暂无决策",
@@ -208,7 +210,7 @@ const idle = () => ['idle','finished','error'].includes(state.status);
 const active = () => !idle() && state.status !== 'previewing';
 function notice(key) { message=key; renderNotice(); }
 function renderNotice() {
-  const key=message || (state.hasKey===false?'missing_key':'') || state.error || (state.imageError?'imageError':'');
+  const key=message || (state.hasKey===false?'missing_key':'') || state.error || state.result?.failure || (state.imageError?'imageError':'');
   $('notice').hidden=!key; $('notice').textContent=key?t(key):'';
 }
 async function request(path, body) {
@@ -261,7 +263,9 @@ function render() {
   const progress=state.progress,trace=state.result?.trace||progress?.trace||[],calls=state.result?.calls||progress?.calls||[];
   const last=trace.at(-1),phase=progress?.phase;
   const finalStatus=state.result?.status||progress?.finalStatus;
-  $('status').textContent=t(state.status==='finished'&&finalStatus?finalStatus:state.status==='running'&&['deciding','writing','acting','discarded'].includes(phase)?phase:state.status);
+  const retry=phase==='retrying'&&active()?progress.retry:undefined;
+  const retryLabel=retry?`${t('retrying')} ${retry.attempt}/${retry.maxRetries} · ${retry.delayMs/1000} s`:'';
+  $('status').textContent=retryLabel||t(state.status==='finished'&&finalStatus?finalStatus:state.status==='running'&&['deciding','writing','acting','discarded'].includes(phase)?phase:state.status);
   $('count').textContent=String(trace.filter(x=>x.outcome==='executed').length);
   const elapsed=state.result?.elapsedMs??progress?.elapsedMs;
   $('elapsed').textContent=elapsed===undefined?'—':`${(elapsed/1000).toFixed(1)} s`;
@@ -270,7 +274,8 @@ function render() {
   $('tokens').textContent=calls.length?`${calls.reduce((n,c)=>n+(c.inputTokens||0),0).toLocaleString()} / ${calls.reduce((n,c)=>n+(c.outputTokens||0),0).toLocaleString()}`:'—';
   $('call-note').textContent=calls.length?`${calls.length} ${t('calls')} · ${t('lastCall')} ${(calls.at(-1).ms/1000).toFixed(2)} s${incomplete?' · '+t('unknownCost'):''}`:'';
   const summary=$('decision-summary');summary.replaceChildren();summary.classList.toggle('amber',!!finalStatus);
-  if(last){
+  if(retry){summary.append(node('div','placeholder',retryLabel));}
+  else if(last){
     summary.append(node('div','decision-kicker',t(finalStatus?'finished':'readyDecision')),node('strong','',t(last.action.operation)));
     const label=last.action.targetLabel||last.action.target||'';
     if(label)summary.append(node('p','',label));

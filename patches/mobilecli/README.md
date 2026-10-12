@@ -1,4 +1,14 @@
-# Android accessibility cache refresh
+# Android MobileCLI patches
+
+These downstream patches target **mobilecli 1.0.9**, commit `583fdc752a3c410f1b63ecc7cfbe93135c45ee9a`.
+
+## App launch arguments
+
+`quote-launch-component.patch` quotes the resolved activity component before passing it through `adb shell`. Android activity names can contain `$` (Java inner classes); without shell quoting, that suffix is expanded as an environment variable and `am start` receives the wrong component. The fix uses MobileCLI's existing shell-escaping dependency and applies to both discovered launchers and explicit activity names.
+
+Validation on Android 15 / API 35: the patched MobileCLI successfully launched Settings and YouTube (`Shell$HomeActivity`). YouTube reached its first-run Android permission prompt; this verifies app launching, not completion of its onboarding. The existing launcher-resolution and component-validation Go tests also passed.
+
+## Accessibility cache refresh
 
 Temporary downstream patch for [mobilecli #415](https://github.com/mobile-next/mobilecli/issues/415). Apply it to **mobilecli 1.0.9**, commit `583fdc752a3c410f1b63ecc7cfbe93135c45ee9a`.
 
@@ -13,10 +23,11 @@ Build the patched dependency using upstream's Android/iOS agent build prerequisi
 git clone --branch 1.0.9 --depth 1 https://github.com/mobile-next/mobilecli.git
 cd mobilecli
 git apply /path/to/mobile-mcp-jev/patches/mobilecli/clear-accessibility-cache.patch
+git apply /path/to/mobile-mcp-jev/patches/mobilecli/quote-launch-component.patch
 make build
 ```
 
-Point `MOBILECLI_PATH` in the fork's ignored `.env` to the resulting executable, then restart the inspector/MCP process. The patch is **not** included in the normal npm dependency. Removing the override restores the bundled upstream binary.
+Point `MOBILECLI_PATH` in the fork's ignored `.env` to the resulting executable, then restart the inspector/MCP process. These patches are **not** included in the normal npm dependency. Removing the override restores the bundled upstream binary.
 
 With an awake, unlocked, idle Android test device running Chrome, set `ANDROID_SERIAL` and `MOBILE_DEVICE`, build this fork, and run:
 

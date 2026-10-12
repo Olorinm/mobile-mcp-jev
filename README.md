@@ -78,6 +78,8 @@ After configuring `.env` and building, run `npm run inspector` (or `Try-Inspecto
 
 The local English/Chinese panel shows the phone screenshot, next action and execution log. Use **Review step** to inspect a decision before executing it, or run automatically and pause before the next action. Probabilities, token usage and device options expand on demand. Stop cancels subsequent work; a device command already sent may still finish.
 
+Jev and DeepSeek requests that return HTTP 503 retry at most twice, after 1 and 2 seconds. The panel shows retry progress and final errors. Stop and the task deadline interrupt the wait; every attempt is recorded, and phone actions are not replayed.
+
 Leave the optional app package empty to start from the current screen and let Jev choose an installed app. Application choices appear under **Target app**. The current navigation policy differs from the versions used in the historical benchmark table; those measurements have not been rerun for this update.
 
 This panel runs Jev directly, with DeepSeek only for input text when needed. It does **not** include the outer OpenCode/DeepSeek verification and recovery loop. Screenshots refresh independently, one asynchronous capture at a time, with a 500 ms interval between captures. Decisions and actions never wait for a frame; the final frame may arrive after completion. Control overlays appear in manual review or a static preview, where they can be associated with an observation. Screenshots stay in session memory; task and UI text go to the model provider. Do not drive the same device from another MCP client during inspection. Manual pauses and shared device/network load still affect timings; the historical headless benchmark is not a matched comparison with this version.
